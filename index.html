@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>📊 Gestão Financeira | Status True/False + Filtro Descrição + Ordenação</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
+    body { background: linear-gradient(135deg, #f0f4fa 0%, #e6edf4 100%); padding: 24px; min-height: 100vh; }
+    body.dark { background: #0a0c10; background: radial-gradient(circle at 20% 30%, #12151c, #030507); }
+    .dashboard { max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); padding: 16px 28px; border-radius: 32px; }
+    body.dark .header { background: rgba(20, 24, 32, 0.85); }
+    h1 { font-weight: 700; font-size: 1.8rem; background: linear-gradient(120deg, #1e293b, #2c3e66); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    body.dark h1 { background: linear-gradient(120deg, #f9d976, #f39f86); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .btn-refresh, .btn-darkmode { background: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    body.dark .btn-refresh, body.dark .btn-darkmode { background: #2a2f3a; color: #ffd966; }
+    .btn-refresh:hover, .btn-darkmode:hover { transform: translateY(-2px); }
+    .nav-tabs { display: flex; gap: 12px; background: white; border-radius: 60px; padding: 6px; }
+    body.dark .nav-tabs { background: #1e2129; }
+    .tab-btn { flex: 1; padding: 12px 20px; border: none; background: transparent; border-radius: 50px; font-weight: 600; font-size: 1rem; color: #4a5b6e; cursor: pointer; }
+    body.dark .tab-btn { color: #b9c3d4; }
+    .tab-btn.active { background: #1a73e8; color: white; }
+    body.dark .tab-btn.active { background: #ffb347; color: #121212; box-shadow: 0 0 8px #ffb347; }
+    .tab-btn:hover:not(.active) { background: #f1f5f9; color: #1e293b; }
+    body.dark .tab-btn:hover:not(.active) { background: #2e3440; color: #ffd966; }
+    .page { display: none; flex-direction: column; gap: 28px; }
+    .page.active { display: flex; }
+    .cards-row { display: flex; flex-wrap: wrap; gap: 24px; }
+    .card { background: white; border-radius: 28px; padding: 24px 28px; flex: 1 1 220px; box-shadow: 0 12px 28px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); }
+    body.dark .card { background: #181e26; border-color: #2c323f; }
+    .card:hover { transform: translateY(-3px); }
+    .card-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: #5b6e8c; margin-bottom: 12px; }
+    body.dark .card-title { color: #ffd966; }
+    .card-value { font-size: 2.2rem; font-weight: 800; }
+    .entrada { color: #0f9d58; } body.dark .entrada { color: #8bc34a; }
+    .saida { color: #d93025; } body.dark .saida { color: #ff8a7a; }
+    .saldo { color: #1a73e8; } body.dark .saldo { color: #ffb347; }
+    .filter-bar { background: white; border-radius: 28px; padding: 20px 28px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
+    body.dark .filter-bar { background: #1a1f27; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 110px; }
+    .filter-group label { font-size: 0.7rem; font-weight: 700; color: #4a627a; text-transform: uppercase; }
+    body.dark .filter-group label { color: #ffd966; }
+    .filter-group select, .filter-group input { padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 0.9rem; background: white; cursor: pointer; }
+    .filter-group input { cursor: text; }
+    body.dark .filter-group select, body.dark .filter-group input { background: #2c313e; border-color: #ffd966; color: #f0f0f0; }
+    .btn { border: none; padding: 10px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #1a73e8; color: white; }
+    body.dark .btn-primary { background: #ffb347; color: #121212; }
+    .btn-secondary { background: #eef2f6; color: #2c3e50; }
+    body.dark .btn-secondary { background: #2f3545; color: #ffd966; }
+    .btn-sm { padding: 6px 16px; font-size: 0.8rem; }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); filter: brightness(0.95); }
+    .table-container { background: white; border-radius: 28px; overflow-x: auto; max-height: 500px; border: 1px solid #f0f2f5; }
+    body.dark .table-container { background: #101318; border-color: #2a2e3a; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: #fafcff; border-bottom: 1px solid #edf2f7; position: sticky; top: 0; z-index: 2; }
+    body.dark .table-header { background: #1a1f2a; border-bottom-color: #2c3240; }
+    .table-header h3 { margin: 0; font-weight: 700; color: #1e2a3e; }
+    body.dark .table-header h3 { color: #ffd966; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 1100px; }
+    th { background: #f8fafd; padding: 14px 12px; text-align: left; font-weight: 700; color: #2c3e50; }
+    body.dark th { background: #1e232e; color: #ffd966; }
+    td { padding: 12px; border-bottom: 1px solid #f0f2f5; }
+    body.dark td { border-bottom-color: #252b36; color: #cfd8e6; }
+    tr:hover td { background: #fafcff; }
+    body.dark tr:hover td { background: #1b212c; }
+    .debito-row td:first-child { border-left: 4px solid #d93025; }
+    .credito-row td:first-child { border-left: 4px solid #0f9d58; }
+    body.dark .debito-row td:first-child { border-left-color: #ff8a7a; }
+    body.dark .credito-row td:first-child { border-left-color: #8bc34a; }
+    .charts-row { display: flex; flex-wrap: wrap; gap: 28px; }
+    .chart-box { flex: 1 1 420px; background: white; border-radius: 28px; padding: 20px 24px; }
+    body.dark .chart-box { background: #13181f; }
+    .chart-box h3 { font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+    body.dark .chart-box h3 { color: #ffd966; }
+    canvas { max-height: 320px; width: 100%; }
+    .footer-note { text-align: center; color: #5a6e8a; font-size: 0.75rem; margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 40px; }
+    body.dark .footer-note { background: rgba(0,0,0,0.5); color: #b9c3d4; }
+    .empty-chart-message { text-align: center; padding: 50px 20px; color: #8e9eae; font-style: italic; }
+    .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 1000; visibility: hidden; opacity:0; }
+    .loading-overlay.active { visibility: visible; opacity:1; }
+    .spinner { background: white; padding: 20px 32px; border-radius: 60px; font-weight: 600; display: flex; gap:12px; }
+    body.dark .spinner { background: #2e3440; color: #ffd966; }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <h1>📊 D.R.E – Gestão Financeira (Status True/False + Ordenação)</h1>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn-darkmode" id="darkModeToggle">🌙 Dark Mode</button>
+      <button class="btn-refresh" id="refreshDataBtn">⟳ Atualizar Dados</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-page="resumo">📋 Resumo Geral</button>
+    <button class="tab-btn" data-page="debitos">🔴 Débitos (Saídas)</button>
+    <button class="tab-btn" data-page="creditos">🟢 Créditos (Entradas)</button>
+  </div>
+  <div id="loadingOverlay" class="loading-overlay"><div class="spinner">⏳ Carregando dados...</div></div>
+
+  <!-- Resumo -->
+  <div id="resumo" class="page active">
+    <div class="cards-row">
+      <div class="card"><div class="card-title">💰 ENTRADAS</div><div class="card-value entrada" id="resumoCredito">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">📤 SAÍDAS</div><div class="card-value saida" id="resumoDebito">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">⚖️ SALDO</div><div class="card-value saldo" id="resumoSaldo">R$ 0,00</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>📆 Dia</label><select id="resDia"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>📅 Mês</label><select id="resMes"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🗓️ Ano</label><select id="resAno"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🏷️ Categoria</label><select id="resCategoria"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>✅ Status</label><select id="resStatus"><option value="todos">Todos</option><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
+      <div class="filter-group"><label>💳 Forma Pagto</label><select id="resFormaPagamento"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>🏦 Banco</label><select id="resBanco"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🔍 Descrição</label><input type="text" id="resDescricao" placeholder="Filtrar por descrição..."></div>
+      <button class="btn btn-primary" id="btnResumoFiltrar">Aplicar</button>
+      <button class="btn btn-secondary" id="btnResumoLimpar">Limpar</button>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box"><h3>📈 Evolução Mensal (Receitas x Despesas)</h3><canvas id="graficoFluxo"></canvas></div>
+      <div class="chart-box"><h3>🥧 Distribuição de Gastos</h3><canvas id="graficoCategoriasResumo"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Débitos -->
+  <div id="debitos" class="page">
+    <div class="cards-row">
+      <div class="card"><div class="card-title">📤 TOTAL SAÍDAS</div><div class="card-value saida" id="debTotal">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">📊 MÉDIA</div><div class="card-value saida" id="debMedia">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">🔢 TRANSAÇÕES</div><div class="card-value" style="color:#5b677b;" id="debQtd">0</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>📆 Dia</label><select id="debDia"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>📅 Mês</label><select id="debMes"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🗓️ Ano</label><select id="debAno"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🏷️ Categoria</label><select id="debCategoria"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>✅ Status</label><select id="debStatus"><option value="todos">Todos</option><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
+      <div class="filter-group"><label>💳 Forma Pagto</label><select id="debFormaPagamento"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>🏦 Banco</label><select id="debBanco"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🔍 Descrição</label><input type="text" id="debDescricao" placeholder="Filtrar por descrição..."></div>
+      <button class="btn btn-primary" id="btnDebFiltrar">Aplicar</button>
+      <button class="btn btn-secondary" id="btnDebLimpar">Limpar</button>
+    </div>
+    <div class="table-container">
+      <div class="table-header">
+        <h3>🔴 SAÍDAS (Detalhado)</h3>
+        <button class="btn btn-secondary btn-sm" id="btnDebInverterOrdem">🔃 Inverter Ordem</button>
+      </div>
+      <table id="tabelaDebitos"><thead><tr><th>Data</th><th>Valor (R$)</th><th>Status</th><th>Forma Pagto</th><th>Descrição</th><th>Sub-descrição</th><th>Banco</th><th>Categoria</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="chart-box"><h3>📊 Gastos por Categoria</h3><canvas id="graficoCategoriasDeb"></canvas></div>
+  </div>
+
+  <!-- Créditos -->
+  <div id="creditos" class="page">
+    <div class="cards-row">
+      <div class="card"><div class="card-title">💰 TOTAL ENTRADAS</div><div class="card-value entrada" id="credTotal">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">📊 MÉDIA</div><div class="card-value entrada" id="credMedia">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">🔢 TRANSAÇÕES</div><div class="card-value" style="color:#5b677b;" id="credQtd">0</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>📆 Dia</label><select id="credDia"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>📅 Mês</label><select id="credMes"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🗓️ Ano</label><select id="credAno"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🏷️ Categoria</label><select id="credCategoria"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>✅ Status</label><select id="credStatus"><option value="todos">Todos</option><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
+      <div class="filter-group"><label>💳 Forma Pagto</label><select id="credFormaPagamento"><option value="todos">Todas</option></select></div>
+      <div class="filter-group"><label>🏦 Banco</label><select id="credBanco"><option value="todos">Todos</option></select></div>
+      <div class="filter-group"><label>🔍 Descrição</label><input type="text" id="credDescricao" placeholder="Filtrar por descrição..."></div>
+      <button class="btn btn-primary" id="btnCredFiltrar">Aplicar</button>
+      <button class="btn btn-secondary" id="btnCredLimpar">Limpar</button>
+    </div>
+    <div class="table-container">
+      <div class="table-header">
+        <h3>🟢 ENTRADAS (Detalhado)</h3>
+        <button class="btn btn-secondary btn-sm" id="btnCredInverterOrdem">🔃 Inverter Ordem</button>
+      </div>
+      <table id="tabelaCreditos"><thead><tr><th>Data</th><th>Valor (R$)</th><th>Status</th><th>Forma Pagto</th><th>Descrição</th><th>Sub-descrição</th><th>Banco</th><th>Categoria</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="chart-box"><h3>📊 Origem das Receitas</h3><canvas id="graficoCategoriasCred"></canvas></div>
+  </div>
+  <div class="footer-note">📌 Filtros: Data, Categoria, Status (True=Pago, False=Pendente), Forma Pagto, Banco e Descrição. Clique em "Inverter Ordem" para alternar entre data mais recente e mais antiga.</div>
+</div>
+
+<script>
+  (function() {
+    const GID_DEBITO = "1145670122";
+    const GID_CREDITO = "902301839";
+    const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub?output=csv&gid=";
+    let debitos = [], creditos = [];
+    let isLoading = false;
+    const loadingDiv = document.getElementById('loadingOverlay');
+    function showLoading(show) { loadingDiv.classList.toggle('active', show); }
+
+    let debOrderAsc = false;
+    let credOrderAsc = false;
+
+    async function fetchCSV(gid) {
+      const resp = await fetch(BASE_CSV + gid);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      return parseCSV(text);
+    }
+    function parseCSV(csvText) {
+      const lines = csvText.split('\n').filter(l => l.trim());
+      if (lines.length && lines[0].toLowerCase().includes('data')) lines.shift();
+      return lines.map(line => {
+        const res = [];
+        let cur = '', inQ = false;
+        for (let ch of line) {
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+        res.push(cur.trim());
+        return res;
+      }).filter(row => row.length && row[0]);
+    }
+    function formatStatus(rawStatus) {
+      const s = rawStatus.trim();
+      if (s === "True") return "Pago";
+      if (s === "False") return "Pendente";
+      return s || "---";
+    }
+    function parseLinhas(linhas, tipo) {
+      const out = [];
+      for (const l of linhas) {
+        if (!l[0]) continue;
+        const data = l[0].trim();
+        const valorRaw = l[1] ? l[1].trim() : "0";
+        const rawStatus = l[2] ? l[2].trim() : "";
+        const status = formatStatus(rawStatus);
+        const formaPagamento = l[3] ? l[3].trim() : "";
+        const descricao = l[4] ? l[4].trim() : "";
+        const subDescricao = l[5] ? l[5].trim() : "";
+        const banco = l[6] ? l[6].trim() : "Não informado";
+        const categoria = l[7] ? l[7].trim() : "Outros";
+        let valor = parseFloat(valorRaw.replace(/[R$\s\.]/g, '').replace(',', '.'));
+        if (isNaN(valor)) valor = 0;
+        if (data.match(/\d{2}\/\d{2}\/\d{4}/)) {
+          const [dia, mes, ano] = data.split("/").map(Number);
+          const dateObj = new Date(ano, mes-1, dia);
+          out.push({ data, valor, status, formaPagamento, descricao, subDescricao, banco, categoria, tipo, dateObj });
+        }
+      }
+      return out;
+    }
+
+    function applyFilter(item, dia, mes, ano, categoria, status, forma, banco, descricaoFilter) {
+      const [d, m, a] = item.data.split("/").map(Number);
+      if (dia !== "todos" && d !== parseInt(dia)) return false;
+      if (mes !== "todos" && m !== parseInt(mes)) return false;
+      if (ano !== "todos" && a !== parseInt(ano)) return false;
+      if (categoria !== "todos" && item.categoria !== categoria) return false;
+      if (status !== "todos" && item.status !== status) return false;
+      if (forma !== "todos" && item.formaPagamento !== forma) return false;
+      if (banco !== "todos" && item.banco !== banco) return false;
+      if (descricaoFilter && descricaoFilter.trim() !== "") {
+        const descLower = item.descricao.toLowerCase();
+        const subDescLower = item.subDescricao.toLowerCase();
+        const filterLower = descricaoFilter.toLowerCase();
+        if (!descLower.includes(filterLower) && !subDescLower.includes(filterLower)) return false;
+      }
+      return true;
+    }
+    function filterArray(arr, dia, mes, ano, cat, stat, forma, banco, desc) {
+      return arr.filter(i => applyFilter(i, dia, mes, ano, cat, stat, forma, banco, desc));
+    }
+
+    function sortByDate(arr, ascending) {
+      return [...arr].sort((a, b) => {
+        if (ascending) return a.dateObj - b.dateObj;
+        else return b.dateObj - a.dateObj;
+      });
+    }
+
+    const charts = {};
+    function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+    function showEmpty(canvasId, msg) {
+      const canvas = document.getElementById(canvasId);
+      const parent = canvas.parentElement;
+      let div = parent.querySelector('.empty-chart-message');
+      if (!div) { div = document.createElement('div'); div.className = 'empty-chart-message'; parent.appendChild(div); }
+      div.innerText = msg;
+      canvas.style.display = 'none';
+      if (charts[canvasId]) destroyChart(canvasId);
+    }
+    function hideEmpty(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const parent = canvas.parentElement;
+      const div = parent.querySelector('.empty-chart-message');
+      if (div) div.remove();
+      canvas.style.display = 'block';
+    }
+    function createLineChart(labels, debitData, creditData) {
+      const canvasId = 'graficoFluxo';
+      if (!labels.length) { showEmpty(canvasId, "Sem dados no período"); return null; }
+      hideEmpty(canvasId);
+      destroyChart('fluxo');
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      const gradDeb = ctx.createLinearGradient(0,0,0,300); gradDeb.addColorStop(0,'#d93025'); gradDeb.addColorStop(1,'#f28b82');
+      const gradCred = ctx.createLinearGradient(0,0,0,300); gradCred.addColorStop(0,'#0f9d58'); gradCred.addColorStop(1,'#80d8a8');
+      charts.fluxo = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [
+          { label: 'Despesas', data: debitData, borderColor: '#d93025', backgroundColor: gradDeb, borderWidth: 3, tension: 0.3, fill: true },
+          { label: 'Receitas', data: creditData, borderColor: '#0f9d58', backgroundColor: gradCred, borderWidth: 3, tension: 0.3, fill: true }
+        ] },
+        options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.raw.toFixed(2).replace('.', ',')}` } }, legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toFixed(2).replace('.', ',') } } } }
+      });
+    }
+    function createDoughnut(canvasId, labels, values, colors) {
+      if (!labels.length) { showEmpty(canvasId, "Sem dados para exibir"); return null; }
+      hideEmpty(canvasId);
+      destroyChart(canvasId);
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, cutout: '65%', borderRadius: 8 }] },
+        options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: R$ ${ctx.raw.toFixed(2).replace('.', ',')} (${((ctx.raw / values.reduce((a,b)=>a+b,0))*100).toFixed(1)}%)` } }, legend: { position: 'right', labels: { boxWidth: 12 } } } }
+      });
+    }
+
+    function populateFixedDaysMonths(prefix) {
+      const diaSel = document.getElementById(`${prefix}Dia`);
+      if (diaSel && diaSel.options.length <= 1) { diaSel.innerHTML = '<option value="todos">Todos</option>'; for (let i=1;i<=31;i++) diaSel.appendChild(new Option(i,i)); }
+      const mesSel = document.getElementById(`${prefix}Mes`);
+      if (mesSel && mesSel.options.length <= 1) { mesSel.innerHTML = '<option value="todos">Todos</option>'; for (let i=1;i<=12;i++) mesSel.appendChild(new Option(i,i)); }
+    }
+    function populateDynamicFilters(prefix, lista) {
+      const anos = new Set(); lista.forEach(t => { const a = t.data.split("/")[2]; if (a) anos.add(a); });
+      const anoSorted = Array.from(anos).sort((a,b)=>a-b);
+      const anoSelect = document.getElementById(`${prefix}Ano`);
+      if (anoSelect) { const old = anoSelect.value; anoSelect.innerHTML = '<option value="todos">Todos</option>'; anoSorted.forEach(a => anoSelect.appendChild(new Option(a,a))); if (anoSorted.includes(old)) anoSelect.value = old; }
+      const cats = new Set(); lista.forEach(t => cats.add(t.categoria));
+      const catSelect = document.getElementById(`${prefix}Categoria`);
+      if (catSelect) { const old = catSelect.value; catSelect.innerHTML = '<option value="todos">Todas</option>'; Array.from(cats).sort().forEach(c => catSelect.appendChild(new Option(c,c))); if (Array.from(cats).includes(old)) catSelect.value = old; }
+      const formas = new Set(); lista.forEach(t => t.formaPagamento && formas.add(t.formaPagamento));
+      const formaSelect = document.getElementById(`${prefix}FormaPagamento`);
+      if (formaSelect) { const old = formaSelect.value; formaSelect.innerHTML = '<option value="todos">Todas</option>'; Array.from(formas).sort().forEach(f => formaSelect.appendChild(new Option(f,f))); if (Array.from(formas).includes(old)) formaSelect.value = old; }
+      const bancos = new Set(); lista.forEach(t => t.banco && bancos.add(t.banco));
+      const bancoSelect = document.getElementById(`${prefix}Banco`);
+      if (bancoSelect) { const old = bancoSelect.value; bancoSelect.innerHTML = '<option value="todos">Todos</option>'; Array.from(bancos).sort().forEach(b => bancoSelect.appendChild(new Option(b,b))); if (Array.from(bancos).includes(old)) bancoSelect.value = old; }
+    }
+
+    let currentDebFiltrados = [];
+    let currentCredFiltrados = [];
+
+    async function updateResumo() {
+      const dia = document.getElementById("resDia").value, mes = document.getElementById("resMes").value, ano = document.getElementById("resAno").value;
+      const cat = document.getElementById("resCategoria").value, stat = document.getElementById("resStatus").value;
+      const forma = document.getElementById("resFormaPagamento").value, banco = document.getElementById("resBanco").value;
+      const desc = document.getElementById("resDescricao").value;
+      const debF = filterArray(debitos, dia, mes, ano, cat, stat, forma, banco, desc);
+      const credF = filterArray(creditos, dia, mes, ano, cat, stat, forma, banco, desc);
+      const totalDeb = debF.reduce((s,d)=>s+d.valor,0), totalCred = credF.reduce((s,d)=>s+d.valor,0);
+      document.getElementById("resumoDebito").innerHTML = `R$ ${totalDeb.toFixed(2).replace('.', ',')}`;
+      document.getElementById("resumoCredito").innerHTML = `R$ ${totalCred.toFixed(2).replace('.', ',')}`;
+      document.getElementById("resumoSaldo").innerHTML = `R$ ${(totalCred - totalDeb).toFixed(2).replace('.', ',')}`;
+      const monthly = new Map();
+      [...debF, ...credF].forEach(t => { const [, m, a] = t.data.split("/"); const key = `${a}-${m}`; if (!monthly.has(key)) monthly.set(key, {deb:0, cred:0}); const obj = monthly.get(key); t.tipo==="debito"? obj.deb+=t.valor : obj.cred+=t.valor; });
+      const sorted = Array.from(monthly.keys()).sort();
+      const labels = sorted.map(k => { const [a,m] = k.split('-'); return `${m}/${a}`; });
+      createLineChart(labels, sorted.map(k=>monthly.get(k).deb), sorted.map(k=>monthly.get(k).cred));
+      const gastos = new Map(); debF.forEach(d => gastos.set(d.categoria, (gastos.get(d.categoria)||0)+d.valor));
+      createDoughnut('graficoCategoriasResumo', Array.from(gastos.keys()), Array.from(gastos.values()), ['#e63946','#f4a261','#2a9d8f','#264653','#a7c957','#6c757d','#ffb703','#bc6c25','#80b918']);
+    }
+
+    async function updateDebitos() {
+      const dia = document.getElementById("debDia").value, mes = document.getElementById("debMes").value, ano = document.getElementById("debAno").value;
+      const cat = document.getElementById("debCategoria").value, stat = document.getElementById("debStatus").value;
+      const forma = document.getElementById("debFormaPagamento").value, banco = document.getElementById("debBanco").value;
+      const desc = document.getElementById("debDescricao").value;
+      let filt = filterArray(debitos, dia, mes, ano, cat, stat, forma, banco, desc);
+      filt = sortByDate(filt, debOrderAsc);
+      currentDebFiltrados = filt;
+      const total = filt.reduce((s,d)=>s+d.valor,0), media = filt.length ? total/filt.length : 0;
+      document.getElementById("debTotal").innerHTML = `R$ ${total.toFixed(2).replace('.', ',')}`;
+      document.getElementById("debMedia").innerHTML = `R$ ${media.toFixed(2).replace('.', ',')}`;
+      document.getElementById("debQtd").innerHTML = filt.length;
+      document.querySelector("#tabelaDebitos tbody").innerHTML = filt.map(d => `<tr class="debito-row"><td>${d.data}</td><td>R$ ${d.valor.toFixed(2).replace('.',',')}</td><td>${d.status}</td><td>${d.formaPagamento}</td><td>${d.descricao}</td><td>${d.subDescricao}</td><td>${d.banco}</td><td>${d.categoria}</td></tr>`).join('');
+      const cats = new Map(); filt.forEach(d => cats.set(d.categoria, (cats.get(d.categoria)||0)+d.valor));
+      createDoughnut('graficoCategoriasDeb', Array.from(cats.keys()), Array.from(cats.values()), ['#e63946','#f4a261','#2a9d8f','#264653','#a7c957','#6c757d','#ffb703','#bc6c25']);
+    }
+
+    async function updateCreditos() {
+      const dia = document.getElementById("credDia").value, mes = document.getElementById("credMes").value, ano = document.getElementById("credAno").value;
+      const cat = document.getElementById("credCategoria").value, stat = document.getElementById("credStatus").value;
+      const forma = document.getElementById("credFormaPagamento").value, banco = document.getElementById("credBanco").value;
+      const desc = document.getElementById("credDescricao").value;
+      let filt = filterArray(creditos, dia, mes, ano, cat, stat, forma, banco, desc);
+      filt = sortByDate(filt, credOrderAsc);
+      currentCredFiltrados = filt;
+      const total = filt.reduce((s,d)=>s+d.valor,0), media = filt.length ? total/filt.length : 0;
+      document.getElementById("credTotal").innerHTML = `R$ ${total.toFixed(2).replace('.', ',')}`;
+      document.getElementById("credMedia").innerHTML = `R$ ${media.toFixed(2).replace('.', ',')}`;
+      document.getElementById("credQtd").innerHTML = filt.length;
+      document.querySelector("#tabelaCreditos tbody").innerHTML = filt.map(d => `<tr class="credito-row"><td>${d.data}</td><td>R$ ${d.valor.toFixed(2).replace('.',',')}</td><td>${d.status}</td><td>${d.formaPagamento}</td><td>${d.descricao}</td><td>${d.subDescricao}</td><td>${d.banco}</td><td>${d.categoria}</td></tr>`).join('');
+      const cats = new Map(); filt.forEach(d => cats.set(d.categoria, (cats.get(d.categoria)||0)+d.valor));
+      createDoughnut('graficoCategoriasCred', Array.from(cats.keys()), Array.from(cats.values()), ['#0f9d58','#2a9d8f','#a7c957','#264653','#f4a261','#6c757d','#ffb703','#bc6c25']);
+    }
+
+    function toggleDebOrder() {
+      debOrderAsc = !debOrderAsc;
+      updateDebitos();
+    }
+    function toggleCredOrder() {
+      credOrderAsc = !credOrderAsc;
+      updateCreditos();
+    }
+
+    function clearResumo() { 
+      ["resDia","resMes","resAno","resCategoria","resStatus","resFormaPagamento","resBanco"].forEach(id => document.getElementById(id).value = "todos");
+      document.getElementById("resDescricao").value = "";
+      updateResumo();
+    }
+    function clearDeb() { 
+      ["debDia","debMes","debAno","debCategoria","debStatus","debFormaPagamento","debBanco"].forEach(id => document.getElementById(id).value = "todos");
+      document.getElementById("debDescricao").value = "";
+      updateDebitos();
+    }
+    function clearCred() { 
+      ["credDia","credMes","credAno","credCategoria","credStatus","credFormaPagamento","credBanco"].forEach(id => document.getElementById(id).value = "todos");
+      document.getElementById("credDescricao").value = "";
+      updateCreditos();
+    }
+
+    async function refreshData() {
+      if (isLoading) return;
+      isLoading = true; showLoading(true);
+      try {
+        const [linhasDeb, linhasCred] = await Promise.all([fetchCSV(GID_DEBITO), fetchCSV(GID_CREDITO)]);
+        debitos = parseLinhas(linhasDeb, "debito");
+        creditos = parseLinhas(linhasCred, "credito");
+        populateFixedDaysMonths("res"); populateFixedDaysMonths("deb"); populateFixedDaysMonths("cred");
+        const all = [...debitos, ...creditos];
+        populateDynamicFilters("res", all);
+        populateDynamicFilters("deb", debitos);
+        populateDynamicFilters("cred", creditos);
+        debOrderAsc = false;
+        credOrderAsc = false;
+        await updateResumo(); await updateDebitos(); await updateCreditos();
+      } catch(err) { console.error(err); alert("Erro ao atualizar: "+err.message); }
+      finally { showLoading(false); isLoading = false; }
+    }
+
+    function autoApply(prefix, updateFn) {
+      const ids = [`${prefix}Dia`, `${prefix}Mes`, `${prefix}Ano`, `${prefix}Categoria`, `${prefix}Status`, `${prefix}FormaPagamento`, `${prefix}Banco`];
+      ids.forEach(id => document.getElementById(id)?.addEventListener('change', updateFn));
+      const descInput = document.getElementById(`${prefix}Descricao`);
+      if (descInput) descInput.addEventListener('input', updateFn);
+    }
+
+    function initDarkMode() {
+      const btn = document.getElementById('darkModeToggle');
+      const isDark = localStorage.getItem('darkMode') === 'true';
+      if (isDark) document.body.classList.add('dark');
+      btn.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        Object.values(charts).forEach(ch => { if (ch && ch.update) ch.update(); });
+      });
+    }
+
+    function initTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.page).classList.add('active');
+          setTimeout(() => { Object.values(charts).forEach(ch => { if (ch && ch.update) ch.update(); }); }, 50);
+        });
+      });
+    }
+
+    function bindEvents() {
+      document.getElementById("btnResumoFiltrar").addEventListener("click", updateResumo);
+      document.getElementById("btnResumoLimpar").addEventListener("click", clearResumo);
+      document.getElementById("btnDebFiltrar").addEventListener("click", updateDebitos);
+      document.getElementById("btnDebLimpar").addEventListener("click", clearDeb);
+      document.getElementById("btnCredFiltrar").addEventListener("click", updateCreditos);
+      document.getElementById("btnCredLimpar").addEventListener("click", clearCred);
+      document.getElementById("refreshDataBtn").addEventListener("click", refreshData);
+      document.getElementById("btnDebInverterOrdem").addEventListener("click", toggleDebOrder);
+      document.getElementById("btnCredInverterOrdem").addEventListener("click", toggleCredOrder);
+      autoApply("res", updateResumo);
+      autoApply("deb", updateDebitos);
+      autoApply("cred", updateCreditos);
+      initTabs();
+    }
+
+    async function init() {
+      showLoading(true);
+      try {
+        const [linhasDeb, linhasCred] = await Promise.all([fetchCSV(GID_DEBITO), fetchCSV(GID_CREDITO)]);
+        debitos = parseLinhas(linhasDeb, "debito");
+        creditos = parseLinhas(linhasCred, "credito");
+        populateFixedDaysMonths("res"); populateFixedDaysMonths("deb"); populateFixedDaysMonths("cred");
+        populateDynamicFilters("res", [...debitos, ...creditos]);
+        populateDynamicFilters("deb", debitos);
+        populateDynamicFilters("cred", creditos);
+        await updateResumo(); await updateDebitos(); await updateCreditos();
+        bindEvents();
+        initDarkMode();
+      } catch(err) { console.error(err); alert("Erro ao carregar planilha: "+err.message); }
+      finally { showLoading(false); }
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
