@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>📊 Gestão Financeira | Dados Reais</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
+    body { background: linear-gradient(135deg, #f0f4fa 0%, #e6edf4 100%); padding: 24px; min-height: 100vh; }
+    body.dark { background: #0a0c10; background: radial-gradient(circle at 20% 30%, #12151c, #030507); }
+    .dashboard { max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); padding: 16px 28px; border-radius: 32px; }
+    body.dark .header { background: rgba(20, 24, 32, 0.85); }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .clock { display: flex; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.5); backdrop-filter: blur(4px); padding: 8px 18px; border-radius: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 100px; }
+    body.dark .clock { background: rgba(0,0,0,0.4); color: #ffd966; }
+    .clock-time { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; }
+    .clock-date { font-size: 0.75rem; opacity: 0.8; }
+    h1 { font-weight: 700; font-size: 1.8rem; background: linear-gradient(120deg, #1e293b, #2c3e66); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    body.dark h1 { background: linear-gradient(120deg, #f9d976, #f39f86); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .btn-refresh, .btn-darkmode { background: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    body.dark .btn-refresh, body.dark .btn-darkmode { background: #2a2f3a; color: #ffd966; }
+    .btn-refresh:hover, .btn-darkmode:hover { transform: translateY(-2px); }
+    .nav-tabs { display: flex; gap: 12px; background: white; border-radius: 60px; padding: 6px; flex-wrap: wrap; }
+    body.dark .nav-tabs { background: #1e2129; }
+    .tab-btn { flex: 1; padding: 12px 20px; border: none; background: transparent; border-radius: 50px; font-weight: 600; font-size: 1rem; color: #4a5b6e; cursor: pointer; }
+    body.dark .tab-btn { color: #b9c3d4; }
+    .tab-btn.active { background: #1a73e8; color: white; }
+    body.dark .tab-btn.active { background: #ffb347; color: #121212; box-shadow: 0 0 8px #ffb347; }
+    .tab-btn:hover:not(.active) { background: #f1f5f9; color: #1e293b; }
+    body.dark .tab-btn:hover:not(.active) { background: #2e3440; color: #ffd966; }
+    .page { display: none; flex-direction: column; gap: 28px; }
+    .page.active { display: flex; }
+    .cards-row { display: flex; flex-wrap: wrap; gap: 24px; }
+    .card { background: white; border-radius: 28px; padding: 24px 28px; flex: 1 1 200px; box-shadow: 0 12px 28px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); position: relative; overflow: hidden; }
+    body.dark .card { background: #181e26; border-color: #2c323f; }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; border-radius: 0 4px 4px 0; }
+    .card-entrada::before { background: #0f9d58; } .card-saida::before { background: #d93025; } .card-saldo::before { background: #1a73e8; } .card-transacoes::before { background: #8e44ad; }
+    .card-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: #5b6e8c; margin-bottom: 12px; position: relative; z-index: 1; }
+    body.dark .card-title { color: #ffd966; }
+    .card-value { font-size: 2rem; font-weight: 800; position: relative; z-index: 1; }
+    .entrada { color: #0f9d58; } .saida { color: #d93025; } .saldo { color: #1a73e8; } .transacoes { color: #8e44ad; }
+    .filter-bar { background: white; border-radius: 28px; padding: 20px 28px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
+    body.dark .filter-bar { background: #1a1f27; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 100px; }
+    .filter-group label { font-size: 0.7rem; font-weight: 700; color: #4a627a; text-transform: uppercase; }
+    body.dark .filter-group label { color: #ffd966; }
+    .filter-group select, .filter-group input { padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 0.9rem; background: white; cursor: pointer; }
+    .filter-group input { cursor: text; }
+    body.dark .filter-group select, body.dark .filter-group input { background: #2c313e; border-color: #ffd966; color: #f0f0f0; }
+    .btn { border: none; padding: 10px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #1a73e8; color: white; } .btn-secondary { background: #eef2f6; color: #2c3e50; }
+    body.dark .btn-primary { background: #ffb347; color: #121212; } body.dark .btn-secondary { background: #2f3545; color: #ffd966; }
+    .table-container { background: white; border-radius: 28px; overflow-x: auto; max-height: 500px; border: 1px solid #f0f2f5; }
+    body.dark .table-container { background: #101318; border-color: #2a2e3a; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 800px; }
+    th { background: #f8fafd; padding: 14px 12px; text-align: left; font-weight: 700; color: #2c3e50; }
+    body.dark th { background: #1e232e; color: #ffd966; }
+    td { padding: 12px; border-bottom: 1px solid #f0f2f5; } body.dark td { border-bottom-color: #252b36; color: #cfd8e6; }
+    .charts-row { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 8px; }
+    .chart-box { flex: 1 1 420px; background: white; border-radius: 28px; padding: 20px 24px; }
+    body.dark .chart-box { background: #13181f; }
+    .chart-box h3 { font-weight: 700; color: #1e293b; margin-bottom: 20px; } body.dark .chart-box h3 { color: #ffd966; }
+    canvas { max-height: 320px; width: 100%; }
+    .empty-chart-message { text-align: center; padding: 50px 20px; color: #8e9eae; font-style: italic; }
+    .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 1000; visibility: hidden; opacity:0; }
+    .loading-overlay.active { visibility: visible; opacity:1; }
+    .spinner { background: white; padding: 20px 32px; border-radius: 60px; font-weight: 600; display: flex; gap:12px; }
+    .debito-row td:first-child { border-left: 4px solid #d93025; } .credito-row td:first-child { border-left: 4px solid #0f9d58; }
+    .analise-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <div class="header-left">
+      <div class="clock"><span class="clock-time" id="clockTime">00:00:00</span><span class="clock-date" id="clockDate">Seg, 1 Jan</span></div>
+      <h1>📊 Gestão Financeira Completa</h1>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn-darkmode" id="darkModeToggle">🌙 Dark Mode</button>
+      <button class="btn-refresh" id="refreshDataBtn">⟳ Atualizar Dados</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-page="resumo">📋 Resumo Geral</button>
+    <button class="tab-btn" data-page="debitos">🔴 Débitos</button>
+    <button class="tab-btn" data-page="creditos">🟢 Créditos</button>
+    <button class="tab-btn" data-page="analises">📊 Análises</button>
+  </div>
+  <div id="loadingOverlay" class="loading-overlay"><div class="spinner">⏳ Carregando dados...</div></div>
+
+  <!-- Resumo Geral -->
+  <div id="resumo" class="page active">
+    <div class="cards-row">
+      <div class="card card-entrada"><div class="card-title">💰 Entradas</div><div class="card-value entrada" id="totalCreditos">R$ 0,00</div></div>
+      <div class="card card-saida"><div class="card-title">📤 Saídas</div><div class="card-value saida" id="totalDebitos">R$ 0,00</div></div>
+      <div class="card card-saldo"><div class="card-title">⚖️ Saldo</div><div class="card-value saldo" id="saldoLiquido">R$ 0,00</div></div>
+      <div class="card card-transacoes"><div class="card-title">📋 Transações</div><div class="card-value transacoes" id="totalTransacoes">0</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>Mês/Ano</label><input type="month" id="filterMesAno"></div>
+      <div class="filter-group"><label>Categoria</label><select id="filterCategoria"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Pessoa</label><select id="filterPessoa"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Banco</label><select id="filterBanco"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Status</label><select id="filterStatus"><option value="">Todos</option></select></div>
+      <button class="btn btn-primary" id="aplicarFiltros">Filtrar</button>
+      <button class="btn btn-secondary" id="limparFiltros">Limpar</button>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box"><h3>📈 Evolução Mensal</h3><canvas id="graficoFluxo"></canvas></div>
+      <div class="chart-box"><h3>🥧 Gastos por Categoria</h3><canvas id="graficoCategoriasResumo"></canvas></div>
+    </div>
+    <div class="table-container"><table id="tabelaTransacoes"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Forma</th><th>Banco</th><th>Pessoa</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <!-- Débitos -->
+  <div id="debitos" class="page">
+    <div class="cards-row">
+      <div class="card card-saida"><div class="card-title">💰 Total Débitos</div><div class="card-value saida" id="debTotal">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">📊 Ticket Médio</div><div class="card-value" id="debMedia" style="color:#5b677b;">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">🔢 Quantidade</div><div class="card-value" id="debQtd" style="color:#5b677b;">0</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>Dia</label><input type="number" id="debDia" placeholder="Dia"></div>
+      <div class="filter-group"><label>Mês</label><input type="number" id="debMes" placeholder="Mês"></div>
+      <div class="filter-group"><label>Ano</label><input type="number" id="debAno" placeholder="Ano"></div>
+      <div class="filter-group"><label>Categoria</label><select id="debCategoria"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Pessoa</label><select id="debPessoa"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Status</label><select id="debStatus"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Forma Pag.</label><select id="debFormaPagamento"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Banco</label><select id="debBanco"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Descrição</label><input type="text" id="debDescricao" placeholder="Buscar..."></div>
+      <button class="btn btn-primary" id="aplicarFiltrosDeb">Filtrar</button>
+    </div>
+    <div class="table-container"><table id="tabelaDebitos"><thead><tr><th>Data</th><th>Valor</th><th>Status</th><th>Forma</th><th>Descrição</th><th>Sub</th><th>Banco</th><th>Categoria</th><th>Pessoa</th></tr></thead><tbody></tbody></table></div>
+    <div class="charts-row">
+      <div class="chart-box"><h3>📊 Por Categoria</h3><canvas id="graficoDebCategoria"></canvas></div>
+      <div class="chart-box"><h3>📅 Mensal</h3><canvas id="graficoDebMensal"></canvas></div>
+      <div class="chart-box"><h3>💳 Forma Pagamento</h3><canvas id="graficoDebFormaPagamento"></canvas></div>
+      <div class="chart-box"><h3>✅ Status</h3><canvas id="graficoDebStatus"></canvas></div>
+      <div class="chart-box"><h3>🏦 Top Bancos</h3><canvas id="graficoDebBancos"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Créditos -->
+  <div id="creditos" class="page">
+    <div class="cards-row">
+      <div class="card card-entrada"><div class="card-title">💰 Total Créditos</div><div class="card-value entrada" id="credTotal">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">📊 Ticket Médio</div><div class="card-value" id="credMedia" style="color:#5b677b;">R$ 0,00</div></div>
+      <div class="card"><div class="card-title">🔢 Quantidade</div><div class="card-value" id="credQtd" style="color:#5b677b;">0</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>Dia</label><input type="number" id="credDia" placeholder="Dia"></div>
+      <div class="filter-group"><label>Mês</label><input type="number" id="credMes" placeholder="Mês"></div>
+      <div class="filter-group"><label>Ano</label><input type="number" id="credAno" placeholder="Ano"></div>
+      <div class="filter-group"><label>Categoria</label><select id="credCategoria"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Pessoa</label><select id="credPessoa"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Status</label><select id="credStatus"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Forma Pag.</label><select id="credFormaPagamento"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Banco</label><select id="credBanco"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Descrição</label><input type="text" id="credDescricao" placeholder="Buscar..."></div>
+      <button class="btn btn-primary" id="aplicarFiltrosCred">Filtrar</button>
+    </div>
+    <div class="table-container"><table id="tabelaCreditos"><thead><tr><th>Data</th><th>Valor</th><th>Status</th><th>Forma</th><th>Descrição</th><th>Sub</th><th>Banco</th><th>Categoria</th><th>Pessoa</th></tr></thead><tbody></tbody></table></div>
+    <div class="charts-row">
+      <div class="chart-box"><h3>📊 Por Categoria</h3><canvas id="graficoCredCategoria"></canvas></div>
+      <div class="chart-box"><h3>📅 Mensal</h3><canvas id="graficoCredMensal"></canvas></div>
+      <div class="chart-box"><h3>💳 Forma Pagamento</h3><canvas id="graficoCredFormaPagamento"></canvas></div>
+      <div class="chart-box"><h3>✅ Status</h3><canvas id="graficoCredStatus"></canvas></div>
+      <div class="chart-box"><h3>🏦 Top Bancos</h3><canvas id="graficoCredBancos"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Análises -->
+  <div id="analises" class="page">
+    <div class="cards-row">
+      <div class="card"><div class="card-title">📉 Média Débito</div><div class="card-value saida" id="anaMediaDeb">-</div></div>
+      <div class="card"><div class="card-title">📈 Média Crédito</div><div class="card-value entrada" id="anaMediaCred">-</div></div>
+      <div class="card"><div class="card-title">🔺 Maior Débito</div><div class="card-value saida" id="anaMaxDeb">-</div></div>
+      <div class="card"><div class="card-title">🟢 Maior Crédito</div><div class="card-value entrada" id="anaMaxCred">-</div></div>
+      <div class="card"><div class="card-title">⚖️ Saldo Médio</div><div class="card-value saldo" id="anaAvgBalance">-</div></div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group"><label>Dia</label><input type="number" id="anaDia" placeholder="Dia"></div>
+      <div class="filter-group"><label>Mês</label><input type="number" id="anaMes" placeholder="Mês"></div>
+      <div class="filter-group"><label>Ano</label><input type="number" id="anaAno" placeholder="Ano"></div>
+      <div class="filter-group"><label>Categoria</label><select id="anaCategoria"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Pessoa</label><select id="anaPessoa"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Status</label><select id="anaStatus"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Forma Pag.</label><select id="anaFormaPagamento"><option value="">Todas</option></select></div>
+      <div class="filter-group"><label>Banco</label><select id="anaBanco"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Descrição</label><input type="text" id="anaDescricao" placeholder="Buscar..."></div>
+      <button class="btn btn-primary" id="aplicarFiltrosAna">Filtrar</button>
+      <div class="filter-group"><label>Comparar com</label><select id="anaPessoa2"><option value="">Nenhuma</option></select></div>
+      <button class="btn btn-secondary" id="btnComparar">Comparar</button>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box"><h3>📡 Radar Comparativo</h3><canvas id="graficoRadar"></canvas></div>
+      <div class="chart-box"><h3>📈 Fluxo de Caixa</h3><canvas id="graficoFluxoCaixa"></canvas></div>
+      <div class="chart-box"><h3>📊 Despesas Empilhadas</h3><canvas id="graficoEmpilhado"></canvas></div>
+      <div class="chart-box"><h3>🍩 Receitas por Forma</h3><canvas id="graficoReceitaForma"></canvas></div>
+      <div class="chart-box"><h3>📊 Status Pago/Pendente</h3><canvas id="graficoStatusComparacao"></canvas></div>
+      <div class="chart-box"><h3>🏦 Top 10 Bancos</h3><canvas id="graficoBanco"></canvas></div>
+      <div class="chart-box"><h3>📈 Variação Mensal (%)</h3><canvas id="miniVariacaoChart"></canvas><div id="variacaoMensalInfo"></div></div>
+    </div>
+    <div style="display:flex; gap:20px;">
+      <div class="table-container" style="flex:1;"><h3>🏆 Top 5 Gastos</h3><table id="topGastosTable"><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+      <div class="table-container" style="flex:1;"><h3>🏆 Top 5 Receitas</h3><table id="topReceitasTable"><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="footer-note">📌 Dados reais da sua planilha – GIDs 1145670122 (Débitos) e 902301839 (Créditos)</div>
+</div>
+
+<script>
+  (function() {
+    const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS7zFD_1N9lcyhv5ImxENo80GCx1NcS0RA83cnkiko7jFpBLZZZPjCsfIckobVMWhgdmpRkw-A3NCgf/pub?output=csv&gid=";
+    const GID_DEBITO = "1145670122";
+    const GID_CREDITO = "902301839";
+
+    let debitos = [], creditos = [];
+    let charts = {};
+    let comparar = false;
+
+    // ========== UTILITÁRIOS ==========
+    function destroyChart(id) { if (charts[id]) { charts[id].destroy(); charts[id] = null; } }
+    function showEmpty(canvasId, msg) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      destroyChart(canvasId);
+      canvas.style.display = 'none';
+      const parent = canvas.parentElement;
+      let div = parent.querySelector('.empty-chart-message');
+      if (!div) { div = document.createElement('div'); div.className = 'empty-chart-message'; parent.appendChild(div); }
+      div.innerText = msg;
+    }
+    function getCtx(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+      destroyChart(canvasId);
+      const parent = canvas.parentElement;
+      const msg = parent.querySelector('.empty-chart-message');
+      if (msg) msg.remove();
+      canvas.style.display = 'block';
+      return canvas.getContext('2d');
+    }
+
+    // ========== GRÁFICOS GENÉRICOS ==========
+    function barChart(canvasId, labels, data, color, horizontal=false) {
+      if (!labels.length) return showEmpty(canvasId, 'Sem dados');
+      const ctx = getCtx(canvasId);
+      if (!ctx) return;
+      charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: color }] },
+        options: {
+          indexAxis: horizontal ? 'y' : 'x',
+          responsive: true,
+          plugins: { tooltip: { callbacks: { label: (c) => `R$ ${c.raw.toFixed(2)}` } } }
+        }
+      });
+    }
+    function lineChart(canvasId, labels, datasets) {
+      if (!labels.length) return showEmpty(canvasId, 'Sem dados');
+      const ctx = getCtx(canvasId);
+      if (!ctx) return;
+      charts[canvasId] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true } });
+    }
+    function doughnutChart(canvasId, labels, data, colors) {
+      if (!labels.length) return showEmpty(canvasId, 'Sem dados');
+      const ctx = getCtx(canvasId);
+      if (!ctx) return;
+      charts[canvasId] = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors }] }, options: { cutout: '60%' } });
+    }
+
+    // ========== LEITURA CSV ==========
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (!lines.length) return [];
+      return lines.map(line => {
+        const row = []; let cur = '', inQ = false;
+        for (let ch of line) {
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+        row.push(cur.trim());
+        return row;
+      }).filter(r => r.length >= 2);
+    }
+
+    function parseRows(rows) {
+      if (rows.length < 2) return [];
+      const header = rows[0].map(h => String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+      const idx = (terms) => { for (let t of terms) { let i = header.findIndex(h => h.includes(t)); if (i!==-1) return i; } return -1; };
+      const d = idx(['data','date','dt']); const v = idx(['valor','value','vlr','montante']);
+      const s = idx(['status','situacao','pago']); const f = idx(['forma','formapagamento','pagamento','meio']);
+      const desc = idx(['descricao','desc','nome','item']); const sub = idx(['subdescricao','sub','detalhe','obs']);
+      const b = idx(['banco','bank','instituicao']); const cat = idx(['categoria','cat','tipo']);
+      const p = idx(['pessoa','nome','responsavel','usuario']);
+      const useFallback = [d,v,s,f,desc,sub,b,cat,p].filter(x=>x!==-1).length < 4;
+      const dataRows = rows.slice(1);
+      if (dataRows.length === 0) return [];
+      return dataRows.map(row => {
+        const get = (i) => (i!==-1 && i<row.length) ? row[i] : '';
+        const dataStr = useFallback ? row[0] : get(d);
+        let valor = parseFloat((useFallback ? row[1] : get(v)).replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+        let status = (useFallback ? row[2] : get(s)).trim().toLowerCase();
+        status = status === 'true' ? 'Pago' : status === 'false' ? 'Pendente' : status || 'Pendente';
+        const forma = useFallback ? row[3] : get(f);
+        const descricao = useFallback ? row[4] : get(desc);
+        const subDesc = useFallback ? row[5] : get(sub);
+        const banco = (useFallback ? row[6] : get(b)) || 'Não informado';
+        const categoria = (useFallback ? row[7] : get(cat)) || 'Outros';
+        const pessoa = (useFallback ? row[8] : get(p)) || 'Geral';
+        let dia=1, mes=1, ano=2025, dateObj = new Date();
+        if (dataStr && dataStr.includes('/')) {
+          const parts = dataStr.split('/');
+          dia=parseInt(parts[0]); mes=parseInt(parts[1]); ano=parseInt(parts[2])||2025;
+          dateObj = new Date(ano, mes-1, dia);
+        }
+        return { data:dataStr, valor, status, formaPagamento:forma, descricao, subDescricao:subDesc, banco, categoria, pessoa, tipo:'', dia, mes, ano, dateObj };
+      }).filter(x => x && x.data);
+    }
+
+    async function fetchData(gid, tipo) {
+      try {
+        const resp = await fetch(BASE_CSV + gid);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const text = await resp.text();
+        if (text.trim().startsWith('<!DOCTYPE')) throw new Error('Planilha não publicada como CSV');
+        const rows = parseCSV(text);
+        if (rows.length < 2) throw new Error('CSV vazio (apenas cabeçalho)');
+        const parsed = parseRows(rows);
+        if (!parsed.length) throw new Error('Nenhum registro encontrado');
+        parsed.forEach(r => r.tipo = tipo);
+        console.log(`✅ ${tipo}: ${parsed.length} registros`);
+        return parsed;
+      } catch (e) {
+        alert(`Erro ao carregar ${tipo}: ${e.message}\nVerifique se a planilha está publicada como CSV.`);
+        return [];
+      }
+    }
+
+    // ========== FILTROS ==========
+    function filterData(arr, dia, mes, ano, cat, pessoa, stat, forma, banco, desc) {
+      return arr.filter(item => {
+        if (dia && item.dia !== parseInt(dia)) return false;
+        if (mes && item.mes !== parseInt(mes)) return false;
+        if (ano && item.ano !== parseInt(ano)) return false;
+        if (cat && item.categoria !== cat) return false;
+        if (pessoa && item.pessoa !== pessoa) return false;
+        if (stat && item.status !== stat) return false;
+        if (forma && item.formaPagamento !== forma) return false;
+        if (banco && item.banco !== banco) return false;
+        if (desc && !item.descricao.toLowerCase().includes(desc.toLowerCase())) return false;
+        return true;
+      });
+    }
+
+    function populateFilters() {
+      const all = [...debitos, ...creditos];
+      const cats = [...new Set(all.map(t=>t.categoria))];
+      const pessoas = [...new Set(all.map(t=>t.pessoa))];
+      const bancos = [...new Set(all.map(t=>t.banco))];
+      const statuses = [...new Set(all.map(t=>t.status))];
+      const formas = [...new Set(all.map(t=>t.formaPagamento))];
+      const fill = (id, values) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Todos</option>';
+        values.forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+      };
+      fill('filterCategoria', cats); fill('filterPessoa', pessoas); fill('filterBanco', bancos); fill('filterStatus', statuses);
+      fill('debCategoria', cats); fill('debPessoa', pessoas); fill('debStatus', statuses); fill('debFormaPagamento', formas); fill('debBanco', bancos);
+      fill('credCategoria', cats); fill('credPessoa', pessoas); fill('credStatus', statuses); fill('credFormaPagamento', formas); fill('credBanco', bancos);
+      fill('anaCategoria', cats); fill('anaPessoa', pessoas); fill('anaStatus', statuses); fill('anaFormaPagamento', formas); fill('anaBanco', bancos);
+      const selP2 = document.getElementById('anaPessoa2');
+      if (selP2) { selP2.innerHTML = '<option value="">Nenhuma</option>'; pessoas.forEach(p => { const o = document.createElement('option'); o.value=p; o.textContent=p; selP2.appendChild(o); }); }
+    }
+
+    // ========== ATUALIZAÇÕES ==========
+    function updateResumo() {
+      const mesAno = document.getElementById('filterMesAno').value;
+      let anoF='', mesF='';
+      if (mesAno) [anoF, mesF] = mesAno.split('-');
+      const cat = document.getElementById('filterCategoria').value;
+      const pessoa = document.getElementById('filterPessoa').value;
+      const banco = document.getElementById('filterBanco').value;
+      const stat = document.getElementById('filterStatus').value;
+      const todos = [...debitos, ...creditos];
+      const filt = todos.filter(t => {
+        if (mesF && t.mes !== parseInt(mesF)) return false;
+        if (anoF && t.ano !== parseInt(anoF)) return false;
+        if (cat && t.categoria !== cat) return false;
+        if (pessoa && t.pessoa !== pessoa) return false;
+        if (banco && t.banco !== banco) return false;
+        if (stat && t.status !== stat) return false;
+        return true;
+      });
+      const ent = filt.filter(t=>t.tipo==='credito').reduce((s,t)=>s+t.valor,0);
+      const sai = filt.filter(t=>t.tipo==='debito').reduce((s,t)=>s+t.valor,0);
+      document.getElementById('totalCreditos').innerText = `R$ ${ent.toFixed(2)}`;
+      document.getElementById('totalDebitos').innerText = `R$ ${sai.toFixed(2)}`;
+      document.getElementById('saldoLiquido').innerText = `R$ ${(ent-sai).toFixed(2)}`;
+      document.getElementById('totalTransacoes').innerText = filt.length;
+      const tbody = document.querySelector('#tabelaTransacoes tbody');
+      tbody.innerHTML = '';
+      filt.sort((a,b)=>b.dateObj-a.dateObj).slice(0,100).forEach(t => {
+        const row = tbody.insertRow();
+        row.className = t.tipo==='debito'?'debito-row':'credito-row';
+        row.insertCell(0).innerText = t.data;
+        row.insertCell(1).innerText = t.descricao;
+        row.insertCell(2).innerText = t.categoria;
+        row.insertCell(3).innerHTML = `<span style="color:${t.tipo==='debito'?'#d93025':'#0f9d58'}">R$ ${t.valor.toFixed(2)}</span>`;
+        row.insertCell(4).innerText = t.status;
+        row.insertCell(5).innerText = t.formaPagamento;
+        row.insertCell(6).innerText = t.banco;
+        row.insertCell(7).innerText = t.pessoa;
+      });
+      const monthly = new Map();
+      filt.forEach(t => { const k = `${t.ano}-${t.mes}`; if (!monthly.has(k)) monthly.set(k,{ent:0,sai:0}); const m = monthly.get(k); t.tipo==='credito'? m.ent+=t.valor : m.sai+=t.valor; });
+      const keys = Array.from(monthly.keys()).sort();
+      lineChart('graficoFluxo', keys.map(k=>k.split('-').reverse().join('/')), [
+        { label:'Entradas', data: keys.map(k=>monthly.get(k).ent), borderColor:'#0f9d58', backgroundColor:'rgba(15,157,88,0.1)', fill:true },
+        { label:'Saídas', data: keys.map(k=>monthly.get(k).sai), borderColor:'#d93025', backgroundColor:'rgba(217,48,37,0.1)', fill:true }
+      ]);
+      const gastos = {};
+      filt.filter(t=>t.tipo==='debito').forEach(t => gastos[t.categoria] = (gastos[t.categoria]||0)+t.valor);
+      doughnutChart('graficoCategoriasResumo', Object.keys(gastos), Object.values(gastos), ['#e63946','#f4a261','#2a9d8f','#264653','#a7c957','#6c757d','#ffb703']);
+    }
+
+    function graficoCategoria(arr, canvasId, cor) { const m=new Map(); arr.forEach(i=>m.set(i.categoria,(m.get(i.categoria)||0)+i.valor)); barChart(canvasId, Array.from(m.keys()), Array.from(m.values()), cor); }
+    function graficoMensal(arr, canvasId, label, cor) { const m=new Map(); arr.forEach(i=>{const k=`${i.ano}-${i.mes}`; m.set(k,(m.get(k)||0)+i.valor);}); const keys=Array.from(m.keys()).sort(); lineChart(canvasId, keys.map(k=>k.split('-').reverse().join('/')), [{label, data:keys.map(k=>m.get(k)), borderColor:cor, fill:false}]); }
+    function graficoForma(arr, canvasId, cor) { const m=new Map(); arr.forEach(i=>m.set(i.formaPagamento,(m.get(i.formaPagamento)||0)+i.valor)); barChart(canvasId, Array.from(m.keys()), Array.from(m.values()), cor); }
+    function graficoStatus(arr, canvasId) {
+      const pago=arr.filter(i=>i.status==='Pago').reduce((s,i)=>s+i.valor,0), pend=arr.filter(i=>i.status==='Pendente').reduce((s,i)=>s+i.valor,0);
+      const ctx=getCtx(canvasId); if(!ctx) return;
+      charts[canvasId] = new Chart(ctx, { type:'bar', data:{ labels:['Pago','Pendente'], datasets:[{ data:[pago,pend], backgroundColor:['#0f9d58','#d93025'] }] }, options:{ plugins:{ tooltip:{ callbacks:{ label:(c)=>`R$ ${c.raw.toFixed(2)}` } } } } });
+    }
+    function graficoBancos(arr, canvasId) { const m=new Map(); arr.forEach(i=>m.set(i.banco,(m.get(i.banco)||0)+i.valor)); const top=Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10); barChart(canvasId, top.map(t=>t[0]), top.map(t=>t[1]), '#ffb347', true); }
+
+    function updateDebitos() {
+      const dia=document.getElementById('debDia').value, mes=document.getElementById('debMes').value, ano=document.getElementById('debAno').value;
+      const cat=document.getElementById('debCategoria').value, pessoa=document.getElementById('debPessoa').value, stat=document.getElementById('debStatus').value;
+      const forma=document.getElementById('debFormaPagamento').value, banco=document.getElementById('debBanco').value, desc=document.getElementById('debDescricao').value;
+      const filt = filterData(debitos, dia, mes, ano, cat, pessoa, stat, forma, banco, desc);
+      const total = filt.reduce((s,d)=>s+d.valor,0);
+      document.getElementById('debTotal').innerText = `R$ ${total.toFixed(2)}`;
+      document.getElementById('debMedia').innerText = `R$ ${(filt.length?total/filt.length:0).toFixed(2)}`;
+      document.getElementById('debQtd').innerText = filt.length;
+      const tbody = document.querySelector('#tabelaDebitos tbody');
+      tbody.innerHTML = '';
+      filt.forEach(d => {
+        const row = tbody.insertRow(); row.className='debito-row';
+        row.insertCell(0).innerText=d.data; row.insertCell(1).innerHTML=`R$ ${d.valor.toFixed(2)}`;
+        row.insertCell(2).innerText=d.status; row.insertCell(3).innerText=d.formaPagamento;
+        row.insertCell(4).innerText=d.descricao; row.insertCell(5).innerText=d.subDescricao;
+        row.insertCell(6).innerText=d.banco; row.insertCell(7).innerText=d.categoria; row.insertCell(8).innerText=d.pessoa;
+      });
+      graficoCategoria(filt, 'graficoDebCategoria', '#ff8a7a');
+      graficoMensal(filt, 'graficoDebMensal', 'Débitos', '#d93025');
+      graficoForma(filt, 'graficoDebFormaPagamento', '#f4a261');
+      graficoStatus(filt, 'graficoDebStatus');
+      graficoBancos(filt, 'graficoDebBancos');
+    }
+
+    function updateCreditos() {
+      const dia=document.getElementById('credDia').value, mes=document.getElementById('credMes').value, ano=document.getElementById('credAno').value;
+      const cat=document.getElementById('credCategoria').value, pessoa=document.getElementById('credPessoa').value, stat=document.getElementById('credStatus').value;
+      const forma=document.getElementById('credFormaPagamento').value, banco=document.getElementById('credBanco').value, desc=document.getElementById('credDescricao').value;
+      const filt = filterData(creditos, dia, mes, ano, cat, pessoa, stat, forma, banco, desc);
+      const total = filt.reduce((s,c)=>s+c.valor,0);
+      document.getElementById('credTotal').innerText = `R$ ${total.toFixed(2)}`;
+      document.getElementById('credMedia').innerText = `R$ ${(filt.length?total/filt.length:0).toFixed(2)}`;
+      document.getElementById('credQtd').innerText = filt.length;
+      const tbody = document.querySelector('#tabelaCreditos tbody');
+      tbody.innerHTML = '';
+      filt.forEach(c => {
+        const row = tbody.insertRow(); row.className='credito-row';
+        row.insertCell(0).innerText=c.data; row.insertCell(1).innerHTML=`R$ ${c.valor.toFixed(2)}`;
+        row.insertCell(2).innerText=c.status; row.insertCell(3).innerText=c.formaPagamento;
+        row.insertCell(4).innerText=c.descricao; row.insertCell(5).innerText=c.subDescricao;
+        row.insertCell(6).innerText=c.banco; row.insertCell(7).innerText=c.categoria; row.insertCell(8).innerText=c.pessoa;
+      });
+      graficoCategoria(filt, 'graficoCredCategoria', '#8bc34a');
+      graficoMensal(filt, 'graficoCredMensal', 'Créditos', '#0f9d58');
+      graficoForma(filt, 'graficoCredFormaPagamento', '#a7c957');
+      graficoStatus(filt, 'graficoCredStatus');
+      graficoBancos(filt, 'graficoCredBancos');
+    }
+
+    function updateAnalises() {
+      const dia=document.getElementById('anaDia').value, mes=document.getElementById('anaMes').value, ano=document.getElementById('anaAno').value;
+      const cat=document.getElementById('anaCategoria').value, pessoa=document.getElementById('anaPessoa').value, stat=document.getElementById('anaStatus').value;
+      const forma=document.getElementById('anaFormaPagamento').value, banco=document.getElementById('anaBanco').value, desc=document.getElementById('anaDescricao').value;
+      const debF = filterData(debitos, dia, mes, ano, cat, pessoa, stat, forma, banco, desc);
+      const credF = filterData(creditos, dia, mes, ano, cat, pessoa, stat, forma, banco, desc);
+      const totalDeb = debF.reduce((s,d)=>s+d.valor,0), totalCred = credF.reduce((s,c)=>s+c.valor,0);
+      document.getElementById('anaMediaDeb').innerHTML = `R$ ${(debF.length?totalDeb/debF.length:0).toFixed(2)}`;
+      document.getElementById('anaMediaCred').innerHTML = `R$ ${(credF.length?totalCred/credF.length:0).toFixed(2)}`;
+      document.getElementById('anaMaxDeb').innerHTML = `R$ ${(debF.length?Math.max(...debF.map(d=>d.valor)):0).toFixed(2)}`;
+      document.getElementById('anaMaxCred').innerHTML = `R$ ${(credF.length?Math.max(...credF.map(c=>c.valor)):0).toFixed(2)}`;
+      const monthly = new Map(); [...debF, ...credF].forEach(t => { const k=`${t.ano}-${t.mes}`; if(!monthly.has(k)) monthly.set(k,{rec:0,exp:0}); const m=monthly.get(k); t.tipo==='credito'? m.rec+=t.valor : m.exp+=t.valor; });
+      let avg=0; for(let m of monthly.values()) avg += (m.rec-m.exp); if(monthly.size) avg/=monthly.size;
+      document.getElementById('anaAvgBalance').innerHTML = `R$ ${avg.toFixed(2)}`;
+      const p2 = document.getElementById('anaPessoa2').value;
+      if (comparar && p2 && p2!=='') {
+        const debP2 = filterData(debitos, dia, mes, ano, cat, p2, stat, forma, banco, desc);
+        const cats = [...new Set([...debF.map(d=>d.categoria), ...debP2.map(d=>d.categoria)])].sort();
+        const d1 = cats.map(c => debF.filter(d=>d.categoria===c).reduce((s,d)=>s+d.valor,0));
+        const d2 = cats.map(c => debP2.filter(d=>d.categoria===c).reduce((s,d)=>s+d.valor,0));
+        const ctx = getCtx('graficoRadar');
+        if (ctx && cats.length) charts['graficoRadar'] = new Chart(ctx, { type:'radar', data:{ labels:cats, datasets:[
+          { label:pessoa||'Pessoa 1', data:d1, borderColor:'#1a73e8', backgroundColor:'rgba(26,115,232,0.2)' },
+          { label:p2, data:d2, borderColor:'#d93025', backgroundColor:'rgba(217,48,37,0.2)' }
+        ]} });
+        else showEmpty('graficoRadar', 'Sem dados para comparação');
+      } else { destroyChart('graficoRadar'); showEmpty('graficoRadar', 'Selecione uma pessoa e clique em Comparar'); }
+      const cash = new Map(); [...debF, ...credF].forEach(t => { const k=`${t.ano}-${t.mes}`; if(!cash.has(k)) cash.set(k,{ent:0,sai:0}); const m=cash.get(k); t.tipo==='credito'? m.ent+=t.valor : m.sai+=t.valor; });
+      const sorted = Array.from(cash.keys()).sort();
+      lineChart('graficoFluxoCaixa', sorted.map(k=>k.split('-').reverse().join('/')), [
+        { label:'Entradas', data:sorted.map(k=>cash.get(k).ent), borderColor:'#0f9d58', backgroundColor:'rgba(15,157,88,0.1)', fill:true },
+        { label:'Saídas', data:sorted.map(k=>cash.get(k).sai), borderColor:'#d93025', backgroundColor:'rgba(217,48,37,0.1)', fill:true },
+        { label:'Saldo', data:sorted.map((k,i)=>cash.get(k).ent-cash.get(k).sai), borderColor:'#1a73e8', borderDash:[5,5], fill:false }
+      ]);
+      const catMonth = new Map(); debF.forEach(d => { const k=`${d.ano}-${d.mes}`; if(!catMonth.has(d.categoria)) catMonth.set(d.categoria, new Map()); catMonth.get(d.categoria).set(k,(catMonth.get(d.categoria).get(k)||0)+d.valor); });
+      const allMonths = [...new Set(debF.map(d=>`${d.ano}-${d.mes}`))].sort();
+      const categories = Array.from(catMonth.keys()).sort();
+      const colors = ['#e63946','#f4a261','#2a9d8f','#264653','#a7c957','#6c757d','#ffb703'];
+      if (allMonths.length && categories.length) {
+        const ctx = getCtx('graficoEmpilhado');
+        if (ctx) charts['graficoEmpilhado'] = new Chart(ctx, { type:'bar', data:{ labels: allMonths.map(m=>m.split('-').reverse().join('/')), datasets: categories.map((cat,i)=>({ label:cat, data: allMonths.map(m=>catMonth.get(cat)?.get(m)||0), backgroundColor: colors[i%colors.length] })) }, options: { scales:{ x:{stacked:true}, y:{stacked:true} } } });
+      } else showEmpty('graficoEmpilhado', 'Sem dados');
+      const recForma = new Map(); credF.forEach(c => recForma.set(c.formaPagamento, (recForma.get(c.formaPagamento)||0)+c.valor));
+      doughnutChart('graficoReceitaForma', Array.from(recForma.keys()), Array.from(recForma.values()), colors);
+      const debPago=debF.filter(d=>d.status==='Pago').reduce((s,d)=>s+d.valor,0), debPend=debF.filter(d=>d.status==='Pendente').reduce((s,d)=>s+d.valor,0);
+      const credPago=credF.filter(c=>c.status==='Pago').reduce((s,c)=>s+c.valor,0), credPend=credF.filter(c=>c.status==='Pendente').reduce((s,c)=>s+c.valor,0);
+      const ctxStat = getCtx('graficoStatusComparacao');
+      if (ctxStat) charts['graficoStatusComparacao'] = new Chart(ctxStat, { type:'bar', data:{ labels:['Despesas','Receitas'], datasets:[{label:'Pago',data:[debPago,credPago],backgroundColor:'#0f9d58'},{label:'Pendente',data:[debPend,credPend],backgroundColor:'#d93025'}] } });
+      graficoBancos(debF, 'graficoBanco');
+      const mDeb = new Map(), mCred = new Map();
+      debF.forEach(d => { const k=`${d.ano}-${d.mes}`; mDeb.set(k,(mDeb.get(k)||0)+d.valor); });
+      credF.forEach(c => { const k=`${c.ano}-${c.mes}`; mCred.set(k,(mCred.get(k)||0)+c.valor); });
+      const allVar = [...new Set([...mDeb.keys(), ...mCred.keys()])].sort();
+      if (allVar.length>=2) {
+        const pDeb=[], pCred=[], lab=[];
+        for (let i=1; i<allVar.length; i++) {
+          const prev=allVar[i-1], curr=allVar[i];
+          const prevDeb=mDeb.get(prev)||0, currDeb=mDeb.get(curr)||0;
+          const prevCred=mCred.get(prev)||0, currCred=mCred.get(curr)||0;
+          pDeb.push(prevDeb?((currDeb-prevDeb)/prevDeb)*100:(currDeb?100:0));
+          pCred.push(prevCred?((currCred-prevCred)/prevCred)*100:(currCred?100:0));
+          lab.push(curr);
+        }
+        lineChart('miniVariacaoChart', lab, [
+          { label:'Var Despesa %', data:pDeb, borderColor:'#d93025' },
+          { label:'Var Receita %', data:pCred, borderColor:'#0f9d58' }
+        ]);
+        document.getElementById('variacaoMensalInfo').innerText = 'Variação % mês a mês';
+      } else { showEmpty('miniVariacaoChart', 'Precisa de ao menos 2 meses'); document.getElementById('variacaoMensalInfo').innerText = ''; }
+      const gC = new Map(); debF.forEach(d=>gC.set(d.categoria,(gC.get(d.categoria)||0)+d.valor));
+      const topG = Array.from(gC.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      document.getElementById('topGastosTable').querySelector('tbody').innerHTML = topG.map(([c,v])=>`<tr><td>${c}</td><td>R$ ${v.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="2">Nenhum</td></tr>';
+      const rC = new Map(); credF.forEach(c=>rC.set(c.categoria,(rC.get(c.categoria)||0)+c.valor));
+      const topR = Array.from(rC.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      document.getElementById('topReceitasTable').querySelector('tbody').innerHTML = topR.map(([c,v])=>`<tr><td>${c}</td><td>R$ ${v.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="2">Nenhum</td></tr>';
+    }
+
+    async function carregarDados() {
+      document.getElementById('loadingOverlay').classList.add('active');
+      debitos = await fetchData(GID_DEBITO, 'debito');
+      creditos = await fetchData(GID_CREDITO, 'credito');
+      populateFilters();
+      updateResumo();
+      updateDebitos();
+      updateCreditos();
+      updateAnalises();
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // ========== EVENTOS ==========
+    document.getElementById('refreshDataBtn').addEventListener('click', carregarDados);
+    document.getElementById('darkModeToggle').addEventListener('click', ()=>{
+      document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+    });
+    if (localStorage.getItem('darkMode')==='true') document.body.classList.add('dark');
+    document.getElementById('aplicarFiltros').addEventListener('click', updateResumo);
+    document.getElementById('limparFiltros').addEventListener('click', ()=>{
+      document.getElementById('filterMesAno').value='';
+      document.getElementById('filterCategoria').value='';
+      document.getElementById('filterPessoa').value='';
+      document.getElementById('filterBanco').value='';
+      document.getElementById('filterStatus').value='';
+      updateResumo();
+    });
+    document.getElementById('aplicarFiltrosDeb').addEventListener('click', updateDebitos);
+    document.getElementById('aplicarFiltrosCred').addEventListener('click', updateCreditos);
+    document.getElementById('aplicarFiltrosAna').addEventListener('click', updateAnalises);
+    document.getElementById('btnComparar').addEventListener('click', ()=>{ comparar=true; updateAnalises(); });
+    setInterval(()=>{
+      const now = new Date();
+      document.getElementById('clockTime').innerText = now.toLocaleTimeString('pt-BR');
+      document.getElementById('clockDate').innerText = now.toLocaleDateString('pt-BR', { weekday:'short', day:'numeric', month:'short' });
+    }, 1000);
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.page).classList.add('active');
+      });
+    });
+    carregarDados();
+  })();
+</script>
+</body>
+</html>
