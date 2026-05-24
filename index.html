@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-  <title>📊 Gestão Financeira | Análises Avançadas Premium</title>
+  <title>📊 Gestão Financeira | Sua Planilha</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
@@ -114,7 +114,7 @@
   </div>
   <div id="loadingOverlay" class="loading-overlay"><div class="spinner">⏳ Carregando dados...</div></div>
 
-  <!-- Resumo Geral (mantido) -->
+  <!-- Resumo Geral -->
   <div id="resumo" class="page active">
     <div class="cards-row">
       <div class="card card-entrada"><div class="card-title">💰 ENTRADAS</div><div class="card-value entrada" id="resumoCredito">R$ 0,00</div></div>
@@ -207,7 +207,7 @@
     </div>
   </div>
 
-  <!-- Análises Avançadas (NOVO) -->
+  <!-- Análises Avançadas -->
   <div id="analises" class="page">
     <div class="cards-row">
       <div class="card"><div class="card-title">📉 Média Despesa</div><div class="card-value saida" id="anaMediaDeb">R$ 0,00</div></div>
@@ -256,14 +256,16 @@
       <div class="insight-card" style="border-left-color: #1a73e8;"><h3>⭐ Top 5 Categorias de Receita</h3><table class="top-table" id="topReceitasTable"><tbody><tr><td colspan="2">Carregando...</td></tr></tbody></table></div>
     </div>
   </div>
-  <div class="footer-note">📌 Dados de exemplo inclusos. Conecte suas planilhas Google com colunas: Data, Valor, Status (True/False), Forma Pagto, Descrição, Sub-descrição, Banco, Categoria, Pessoa.</div>
+  <div class="footer-note">📌 Dados da sua planilha Google. Atualize a página se necessário.</div>
 </div>
 
 <script>
   (function() {
+    // ===== SUA PLANILHA PUBLICADA =====
+    const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS7zFD_1N9lcyhv5ImxENo80GCx1NcS0RA83cnkiko7jFpBLZZZPjCsfIckobVMWhgdmpRkw-A3NCgf/pub?output=csv&gid=";
     const GID_DEBITO = "1145670122";
     const GID_CREDITO = "902301839";
-    const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub?output=csv&gid=";
+
     let debitos = [], creditos = [];
     let isLoading = false;
     const loadingDiv = document.getElementById('loadingOverlay');
@@ -273,7 +275,7 @@
     let compararPessoas = false;
     let orcamentoMensal = 0;
 
-    // ----- DADOS DE FALLBACK -----
+    // ----- DADOS DE FALLBACK (caso a planilha falhe) -----
     function getMockDebitos() {
       return [
         { data: "05/01/2025", valor: 120.50, status: "Pago", formaPagamento: "Cartão", descricao: "Supermercado", subDescricao: "Compras mês", banco: "Nubank", categoria: "Alimentação", pessoa: "João", tipo: "debito", dia:5, mes:1, ano:2025, dateObj: new Date(2025,0,5) },
@@ -292,7 +294,8 @@
 
     async function fetchCSVWithFallback(gid, tipo) {
       try {
-        const resp = await fetch(BASE_CSV + gid);
+        const url = BASE_CSV + gid;
+        const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const text = await resp.text();
         const linhas = parseCSV(text);
@@ -496,7 +499,6 @@
       updateCreditosCharts(filt);
     }
 
-    // NOVA updateAnalises (completa)
     async function updateAnalises() {
       const dia = document.getElementById("anaDia").value, mes = document.getElementById("anaMes").value, ano = document.getElementById("anaAno").value, cat = document.getElementById("anaCategoria").value, pessoa = document.getElementById("anaPessoa").value, stat = document.getElementById("anaStatus").value, forma = document.getElementById("anaFormaPagamento").value, banco = document.getElementById("anaBanco").value, desc = document.getElementById("anaDescricao").value;
       const pessoa2 = document.getElementById("anaPessoa2")?.value || '';
@@ -519,7 +521,7 @@
         document.getElementById('anaOrcamento').className = 'card-value ' + (restante >= 0 ? 'entrada' : 'saida');
       } else document.getElementById('cardOrcamento').style.display = 'none';
 
-      // Radar
+      // Radar comparativo
       const boxRadar = document.getElementById('boxRadar');
       if (compararPessoas && pessoa2 && pessoa2 !== '') {
         boxRadar.style.display = 'block';
@@ -539,7 +541,7 @@
         } else showEmpty('graficoRadar', 'Sem dados para comparação');
       } else { boxRadar.style.display = 'none'; destroyChart('graficoRadar'); }
 
-      // Fluxo de caixa
+      // Fluxo de caixa mensal
       const cashflowMap = new Map(); [...debF, ...credF].forEach(t => { const key = `${t.ano}-${t.mes}`; if(!cashflowMap.has(key)) cashflowMap.set(key, {entradas:0, saidas:0}); const m = cashflowMap.get(key); t.tipo==='debito'? m.saidas+=t.valor : m.entradas+=t.valor; });
       const sortedMonths = Array.from(cashflowMap.keys()).sort();
       const entradas = sortedMonths.map(k => cashflowMap.get(k).entradas);
@@ -555,7 +557,7 @@
         ]}, options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.raw.toFixed(2).replace('.',',')}` } } } } });
       } else showEmpty('graficoFluxoCaixa', 'Sem dados');
 
-      // Empilhado
+      // Barras empilhadas
       const catMonthMap = new Map(); debF.forEach(d => { const cat = d.categoria; const key = `${d.ano}-${d.mes}`; if (!catMonthMap.has(cat)) catMonthMap.set(cat, new Map()); const inner = catMonthMap.get(cat); inner.set(key, (inner.get(key)||0) + d.valor); });
       const allMonthsSet = new Set(); for (let inner of catMonthMap.values()) for (let k of inner.keys()) allMonthsSet.add(k);
       const monthsSorted = Array.from(allMonthsSet).sort();
@@ -577,7 +579,7 @@
         charts.receitaForma = new Chart(ctx, { type: 'doughnut', data: { labels: formaLabels, datasets: [{ data: formaValues, backgroundColor: colors.slice(0, formaLabels.length) }] }, options: { cutout: '60%', plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: R$ ${ctx.raw.toFixed(2)}` } } } } });
       } else showEmpty('graficoReceitaForma', 'Nenhuma receita');
 
-      // Status
+      // Status Pago x Pendente
       const debPago = debF.filter(d=>d.status==="Pago").reduce((s,d)=>s+d.valor,0);
       const debPend = debF.filter(d=>d.status==="Pendente").reduce((s,d)=>s+d.valor,0);
       const credPago = credF.filter(c=>c.status==="Pago").reduce((s,c)=>s+c.valor,0);
@@ -586,7 +588,7 @@
       const ctxStat = document.getElementById('graficoStatusComparacao').getContext('2d');
       charts.statusComp = new Chart(ctxStat, { type: 'bar', data: { labels: ['Despesas', 'Receitas'], datasets: [{ label: 'Pago', data: [debPago, credPago], backgroundColor: '#0f9d58' }, { label: 'Pendente', data: [debPend, credPend], backgroundColor: '#d93025' }] } });
 
-      // Top bancos (despesas)
+      // Top 10 Bancos (despesas)
       const bancoMap = new Map(); debF.forEach(d=>bancoMap.set(d.banco, (bancoMap.get(d.banco)||0)+d.valor));
       const topBancos = Array.from(bancoMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
       destroyChart('graficoBanco');
@@ -617,7 +619,7 @@
         document.getElementById("variacaoMensalInfo").innerHTML = "Variação percentual mês a mês";
       } else document.getElementById("variacaoMensalInfo").innerHTML = "Precisa de pelo menos 2 meses";
 
-      // Top tabelas
+      // Top 5 tabelas
       const gastosCat = new Map(); debF.forEach(d=>gastosCat.set(d.categoria, (gastosCat.get(d.categoria)||0)+d.valor));
       const topG = Array.from(gastosCat.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
       document.getElementById("topGastosTable").innerHTML = topG.map(([c,v])=>`<tr><td>${c}</td><td style="text-align:right">R$ ${v.toFixed(2).replace('.',',')}</td></tr>`).join('') || '<tr><td colspan="2">Nenhuma despesa</td></tr>';
