@@ -274,11 +274,10 @@
       charts[canvasId] = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors }] }, options: { cutout: '60%' } });
     }
 
-    // ========== LEITURA CSV (CORRIGIDA) ==========
+    // ========== LEITURA CSV ==========
     function parseCSV(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim());
       if (!lines.length) return [];
-      // NÃO remove o cabeçalho aqui – será tratado no parseRows
       return lines.map(line => {
         const row = []; let cur = '', inQ = false;
         for (let ch of line) {
@@ -292,7 +291,7 @@
     }
 
     function parseRows(rows) {
-      if (rows.length < 2) return []; // precisa de cabeçalho + ao menos 1 linha de dados
+      if (rows.length < 2) return [];
       const header = rows[0].map(h => String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
       const idx = (terms) => { for (let t of terms) { let i = header.findIndex(h => h.includes(t)); if (i!==-1) return i; } return -1; };
       const d = idx(['data','date','dt']); const v = idx(['valor','value','vlr','montante']);
@@ -302,7 +301,7 @@
       const p = idx(['pessoa','nome','responsavel','usuario']);
       const useFallback = [d,v,s,f,desc,sub,b,cat,p].filter(x=>x!==-1).length < 4;
       const dataRows = rows.slice(1);
-      if (dataRows.length === 0) return []; // apenas cabeçalho
+      if (dataRows.length === 0) return [];
       return dataRows.map(row => {
         const get = (i) => (i!==-1 && i<row.length) ? row[i] : '';
         const dataStr = useFallback ? row[0] : get(d);
@@ -325,15 +324,6 @@
       }).filter(x => x && x.data);
     }
 
-    function mock(tipo) {
-      if (tipo==='debito') return [
-        { data:"05/01/2025", valor:120.5, status:"Pago", formaPagamento:"Cartão", descricao:"Supermercado", subDescricao:"Compras", banco:"Nubank", categoria:"Alimentação", pessoa:"João", tipo:"debito", dia:5, mes:1, ano:2025, dateObj:new Date(2025,0,5) }
-      ];
-      return [
-        { data:"01/01/2025", valor:5000, status:"Pago", formaPagamento:"Transferência", descricao:"Salário", subDescricao:"Empresa", banco:"Nubank", categoria:"Salário", pessoa:"João", tipo:"credito", dia:1, mes:1, ano:2025, dateObj:new Date(2025,0,1) }
-      ];
-    }
-
     async function fetchData(gid, tipo) {
       try {
         const resp = await fetch(BASE_CSV + gid);
@@ -348,8 +338,8 @@
         console.log(`✅ ${tipo}: ${parsed.length} registros`);
         return parsed;
       } catch (e) {
-        alert(`Erro ao carregar ${tipo}: ${e.message}\nUsando dados de exemplo.`);
-        return mock(tipo);
+        alert(`Erro ao carregar ${tipo}: ${e.message}\nVerifique se a planilha está publicada como CSV.`);
+        return [];
       }
     }
 
