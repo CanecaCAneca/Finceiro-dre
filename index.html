@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adicionar na Planilha</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .container { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 30px; max-width: 500px; width: 100%; }
+    h1 { text-align: center; margin-bottom: 24px; color: #2c3e50; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #34495e; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #dcdde1; border-radius: 8px; font-size: 16px; transition: border 0.3s; }
+    input:focus, select:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.2); }
+    button { width: 100%; padding: 14px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+    button:hover { background: #219a52; }
+    .mensagem { text-align: center; margin-top: 16px; font-weight: 500; }
+    .sucesso { color: #27ae60; }
+    .erro { color: #e74c3c; }
+    .extra-field label { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Adicionar Registro</h1>
+    <form id="formPlanilha">
+      <div class="form-group">
+        <label for="tipo">Tipo</label>
+        <select id="tipo" required>
+          <option value="" disabled selected>Selecione...</option>
+          <option value="debito">Débito (-)</option>
+          <option value="credito">Crédito (+)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="data">Data</label>
+        <input type="date" id="data" required>
+      </div>
+
+      <div class="form-group">
+        <label for="descricao">Descrição</label>
+        <input type="text" id="descricao" placeholder="Ex: Supermercado, Salário..." required>
+      </div>
+
+      <div class="form-group extra-field" id="campoExtra">
+        <label for="categoriaOuFonte">Categoria</label>
+        <input type="text" id="categoriaOuFonte" placeholder="Ex: Alimentação, Moradia...">
+      </div>
+
+      <div class="form-group">
+        <label for="valor">Valor (R$)</label>
+        <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" required>
+      </div>
+
+      <button type="submit">Enviar para a Planilha</button>
+    </form>
+    <div id="mensagem" class="mensagem"></div>
+  </div>
+
+  <script>
+    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwlwcQs9vZnhqEwgDW7p1VRrGDwMH2r_8f2zX347M71n43tyDXIxzL19f50zP-UazCB7Q/exec";
+
+    // Atualiza dinamicamente o campo extra (Categoria ou Fonte)
+    const tipoSelect = document.getElementById("tipo");
+    const campoExtraLabel = document.querySelector("#campoExtra label");
+    const campoExtraInput = document.getElementById("categoriaOuFonte");
+
+    tipoSelect.addEventListener("change", () => {
+      if (tipoSelect.value === "debito") {
+        campoExtraLabel.textContent = "Categoria";
+        campoExtraInput.placeholder = "Ex: Alimentação, Transporte...";
+      } else if (tipoSelect.value === "credito") {
+        campoExtraLabel.textContent = "Fonte";
+        campoExtraInput.placeholder = "Ex: Salário, Freelance...";
+      }
+    });
+
+    document.getElementById("formPlanilha").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mensagemDiv = document.getElementById("mensagem");
+      mensagemDiv.textContent = "Enviando...";
+      mensagemDiv.className = "mensagem";
+
+      const tipo = tipoSelect.value;
+      const data = document.getElementById("data").value;
+      const descricao = document.getElementById("descricao").value.trim();
+      const categoriaOuFonte = campoExtraInput.value.trim();
+      const valor = parseFloat(document.getElementById("valor").value);
+
+      if (!tipo || !data || !descricao || isNaN(valor) || valor <= 0) {
+        mensagemDiv.textContent = "Preencha todos os campos corretamente.";
+        mensagemDiv.className = "mensagem erro";
+        return;
+      }
+
+      const payload = { tipo, data, descricao, categoriaOuFonte, valor };
+
+      try {
+        const resposta = await fetch(URL_WEB_APP, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        mensagemDiv.textContent = "✅ Registro adicionado com sucesso!";
+        mensagemDiv.className = "mensagem sucesso";
+        document.getElementById("formPlanilha").reset();
+        tipoSelect.dispatchEvent(new Event("change"));
+      } catch (erro) {
+        mensagemDiv.textContent = "Erro na comunicação. Tente novamente.";
+        mensagemDiv.className = "mensagem erro";
+        console.error(erro);
+      }
+    });
+  </script>
+</body>
+</html>
