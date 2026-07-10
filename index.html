@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
     </script>
     <style>
-        /* ... (mantenha todo o CSS da versão anterior) ... */
         :root {
             --bg: #f1f5f9;
             --card-bg: rgba(255, 255, 255, 0.75);
@@ -24,7 +23,6 @@
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02);
             --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.03);
-            --radius: 20px;
             --sidebar-width: 260px;
             --sidebar-collapsed-width: 72px;
         }
@@ -70,15 +68,12 @@
             border: 1px solid var(--border);
             transition: width 0.3s ease, padding 0.3s ease;
         }
-        .sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
-            padding: 24px 8px;
-        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed-width); padding: 24px 8px; }
         body.dark .sidebar { background: rgba(15,23,42,0.75); }
         .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 18px; white-space: nowrap; }
         .sidebar-header h2 { font-size:1.1rem; font-weight:700; color:var(--text); transition: opacity 0.2s, width 0.2s; overflow: hidden; }
         .sidebar.collapsed .sidebar-header h2 { opacity: 0; width: 0; margin: 0; }
-        .sidebar-toggle, .sidebar-minimize { background:var(--bg); border:1px solid var(--border); font-size:1rem; cursor:pointer; color:var(--text-secondary); padding:6px 10px; border-radius:10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .sidebar-toggle, .sidebar-minimize { background:var(--bg); border:1px solid var(--border); font-size:1rem; cursor:pointer; color:var(--text-secondary); padding:6px 10px; border-radius:10px; display: flex; align-items: center; justify-content: center; }
         .sidebar-minimize { font-size: 1.2rem; }
         .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
         .sidebar nav button {
@@ -122,130 +117,59 @@
         .filter-group { display:flex; flex-direction:column; gap:4px; min-width:85px; }
         .filter-group label { font-size:0.6rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
         .filter-group select, .filter-group input { padding:8px 12px; border:1.5px solid var(--border); border-radius:14px; font-size:0.78rem; background:var(--card-solid); color:var(--text); transition:all 0.2s; font-family:inherit; }
-        .filter-group select:focus, .filter-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,0.1); outline:none; }
         .table-container { background:var(--card-bg); backdrop-filter:blur(10px); border-radius:20px; overflow-x:auto; max-height:450px; border:1px solid var(--border); box-shadow:var(--shadow); }
         table { width:100%; border-collapse:collapse; font-size:0.75rem; min-width:550px; }
-        th { background:rgba(248,250,253,0.9); padding:12px 10px; text-align:left; font-weight:700; color:var(--text-secondary); cursor:pointer; position:sticky; top:0; z-index:1; text-transform:uppercase; letter-spacing:0.5px; font-size:0.65rem; border-bottom:2px solid var(--border); }
-        th:hover { color:var(--accent); }
+        th { background:rgba(248,250,253,0.9); padding:12px 10px; text-align:left; font-weight:700; color:var(--text-secondary); position:sticky; top:0; z-index:1; text-transform:uppercase; letter-spacing:0.5px; font-size:0.65rem; border-bottom:2px solid var(--border); }
         body.dark th { background:rgba(30,41,59,0.95); }
         td { padding:10px; border-bottom:1px solid var(--border); color:var(--text); }
         tr:hover td { background:rgba(99,102,241,0.03); }
         .debito-row td:first-child { border-left:3px solid var(--danger); }
         .credito-row td:first-child { border-left:3px solid var(--success); }
-        .severity-high { background: rgba(239,68,68,0.08) !important; }
-        .severity-medium { background: rgba(245,158,11,0.08) !important; }
-        .severity-low { background: rgba(16,185,129,0.05) !important; }
-        .aging-badge { padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
-        .aging-30 { background: #dcfce7; color: #166534; }
-        .aging-60 { background: #fef3c7; color: #92400e; }
-        .aging-90 { background: #fee2e2; color: #991b1b; }
-        .charts-row { display:flex; flex-wrap:wrap; gap:18px; }
-        .chart-box { flex:1 1 380px; background:var(--card-bg); backdrop-filter:blur(10px); border-radius:20px; padding:18px 20px; box-shadow:var(--shadow); border:1px solid var(--border); }
-        .chart-box h3 { font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; }
-        canvas { max-height:260px; width:100% !important; }
-        .loading-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:1000; visibility:hidden; opacity:0; transition:0.3s; }
-        .loading-overlay.active { visibility:visible; opacity:1; }
-        .spinner { background:var(--card-solid); padding:18px 32px; border-radius:50px; font-weight:600; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
-        .spinner-icon { width:22px; height:22px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .toast-container { position:fixed; top:20px; right:20px; z-index:2000; display:flex; flex-direction:column; gap:8px; }
-        .toast { background:var(--card-solid); color:var(--text); padding:12px 20px; border-radius:16px; box-shadow:var(--shadow-lg); font-weight:600; border-left:4px solid var(--accent); animation:slideIn 0.3s ease; }
-        .toast.success { border-color:var(--success); } .toast.error { border-color:var(--danger); }
-        @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
-        .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; background:var(--card-bg); backdrop-filter:blur(10px); border-radius:20px; padding:12px; border:1px solid var(--border); box-shadow:var(--shadow); }
-        .calendar-header-cell { text-align:center; font-weight:700; padding:8px; font-size:0.68rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
-        .calendar-cell { background:var(--card-solid); border:1px solid var(--border); border-radius:10px; padding:6px; min-height:60px; font-size:0.7rem; cursor:pointer; transition:all 0.2s; position:relative; }
-        .calendar-cell:hover { background:rgba(99,102,241,0.08); border-color:var(--accent); transform:translateY(-1px); }
-        .calendar-cell.today { border:2px solid var(--accent); background:rgba(99,102,241,0.08); }
-        .calendar-cell.selected { background:rgba(99,102,241,0.15); border:2px solid var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
-        .calendar-cell .day-num { font-weight:700; font-size:0.85rem; }
-        .calendar-cell .mini-entrada { font-size:0.58rem; color:var(--success); font-weight:600; }
-        .calendar-cell .mini-saida { font-size:0.58rem; color:var(--danger); font-weight:600; }
-        .best-month { background: rgba(16, 185, 129, 0.08); font-weight: 700; }
-        .worst-month { background: rgba(239, 68, 68, 0.08); font-weight: 700; }
+        .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; background:var(--card-bg); border-radius:20px; padding:12px; border:1px solid var(--border); }
+        .calendar-header-cell { text-align:center; font-weight:700; padding:8px; font-size:0.68rem; color:var(--text-secondary); }
+        .calendar-cell { background:var(--card-solid); border:1px solid var(--border); border-radius:10px; padding:6px; min-height:60px; font-size:0.7rem; cursor:pointer; transition:all 0.2s; }
+        .calendar-cell.today { border:2px solid var(--accent); }
+        .calendar-cell.selected { background:rgba(99,102,241,0.2); border:2px solid var(--accent); }
         .info-selected {
-            background: var(--card-bg); backdrop-filter: blur(10px); border-radius: 16px; padding: 12px 18px;
-            border: 1px solid var(--accent-light); box-shadow: var(--shadow); display: flex;
-            align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 600; color: var(--accent);
+            background:var(--card-bg); border-radius:16px; padding:12px 18px; display:flex;
+            align-items:center; gap:12px; border:1px solid var(--accent-light);
         }
-        .info-selected button {
-            margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 8px;
-            cursor: pointer; padding: 4px 10px; font-size: 0.7rem; color: var(--text-secondary); transition: all 0.2s;
-        }
-        .info-selected button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .mini-entrada { font-size:0.58rem; color:var(--success); font-weight:600; }
+        .mini-saida { font-size:0.58rem; color:var(--danger); font-weight:600; }
         @media (max-width:768px) {
-            .sidebar { transform:translateX(-100%); width:260px; }
+            .sidebar { transform:translateX(-100%); }
             .sidebar.open { transform:translateX(0); }
-            .sidebar.collapsed { width: var(--sidebar-width); }
             .main-content { margin-left:0 !important; padding:12px; }
             .menu-toggle { display:block; }
-            .card { padding:14px 18px; flex:1 1 140px; }
-            .card-value { font-size:1.3rem; }
         }
     </style>
 </head>
 <body>
-    <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+    <button class="menu-toggle" id="menuToggle">☰</button>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>📊 Gestão</h2>
-            <div style="display: flex; gap: 6px;">
-                <button class="sidebar-minimize" id="sidebarMinimize" title="Minimizar barra">◀</button>
-                <button class="sidebar-toggle" id="sidebarToggle">✕</button>
-            </div>
+            <button class="sidebar-minimize" id="sidebarMinimize">◀</button>
         </div>
         <nav>
             <button class="tab-btn active" data-page="resumo">📋 <span class="nav-text">Resumo Geral</span></button>
-            <button class="tab-btn" data-page="debitos">🔴 <span class="nav-text">Débitos</span></button>
-            <button class="tab-btn" data-page="creditos">🟢 <span class="nav-text">Créditos</span></button>
-            <button class="tab-btn" data-page="dre">🧾 <span class="nav-text">D.R.E.</span></button>
-            <div class="nav-section-label">📈 Análises</div>
-            <button class="tab-btn" data-page="tendencias">📈 <span class="nav-text">Tendências</span></button>
-            <button class="tab-btn" data-page="bancos">🏦 <span class="nav-text">Bancos</span></button>
-            <button class="tab-btn" data-page="pessoas">👥 <span class="nav-text">Pessoas</span></button>
-            <button class="tab-btn" data-page="formaspagamento">💳 <span class="nav-text">Formas Pag.</span></button>
-            <button class="tab-btn" data-page="comparativo">📆 <span class="nav-text">Comparativo Anual</span></button>
-            <button class="tab-btn" data-page="analisemensal">🔍 <span class="nav-text">Análise Mensal</span></button>
-            <div class="nav-section-label">⚠️ Monitoramento</div>
-            <button class="tab-btn" data-page="inadimplencia">🚨 <span class="nav-text">Inadimplência</span> <span class="badge"
-                    id="badgePendentes">0</span></button>
             <button class="tab-btn" data-page="calendario">📅 <span class="nav-text">Calendário</span></button>
         </nav>
-        <div class="sidebar-footer"><button class="btn" id="printBtnSide">🖨️ Imprimir</button></div>
     </aside>
-
     <div class="main-content" id="mainContent">
         <div class="dashboard">
             <div class="header">
-                <div class="header-left">
-                    <div class="clock"><span class="clock-time" id="clockTime">--:--</span><span class="clock-date"
-                            id="clockDate">---</span></div>
-                    <h1>📊 Gestão Financeira Premium</h1>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button class="btn" id="refreshDataBtn">⟳ Atualizar</button>
-                    <button class="btn" id="darkModeToggle">🌙</button>
-                    <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub"
-                        target="_blank" class="btn" rel="noopener">📊 Planilha</a>
-                    <button class="btn" id="printBtn">🖨️</button>
-                </div>
+                <h1>📊 Gestão Financeira Premium</h1>
+                <button class="btn" id="darkModeToggle">🌙</button>
             </div>
-            <div id="loadingOverlay" class="loading-overlay">
-                <div class="spinner"><div class="spinner-icon"></div>Carregando dados...</div>
-            </div>
-            <div class="toast-container" id="toastContainer"></div>
-
-            <!-- ... outras páginas (resumo, débitos, créditos, etc.) exatamente como antes ... -->
-            <!-- Para manter a resposta concisa, incluí apenas a página Calendário modificada. As outras permanecem iguais. -->
-
-            <!-- Calendário Geral (com seleção de dia e tabela) -->
+            <div id="resumo" class="page active"><p>Resumo Geral (em construção)</p></div>
             <div id="calendario" class="page">
                 <div class="cards-row">
                     <div class="card card-entrada"><div class="card-title">💰 Entradas do Mês</div><div class="card-value entrada" id="calEntradasMes">R$ 0,00</div></div>
                     <div class="card card-saida"><div class="card-title">📤 Saídas do Mês</div><div class="card-value saida" id="calSaidasMes">R$ 0,00</div></div>
                     <div class="card card-saldo"><div class="card-title">⚖️ Saldo do Mês</div><div class="card-value saldo" id="calSaldoMes">R$ 0,00</div></div>
                 </div>
-                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card-bg);border-radius:20px;padding:14px 18px;border:1px solid var(--border);box-shadow:var(--shadow);">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--card-bg); border-radius:20px; padding:14px 18px; border:1px solid var(--border);">
                     <div class="filter-group"><label>Mês</label><select id="calMes"></select></div>
                     <div class="filter-group"><label>Ano</label><select id="calAno"></select></div>
                     <button class="btn" id="calHojeBtn" style="background:var(--accent);color:#fff;">📍 Hoje</button>
@@ -253,154 +177,160 @@
                     <button class="btn" id="calProximoBtn">▶</button>
                 </div>
                 <div class="calendar-grid" id="calendarGrid"></div>
-                <!-- Barra de informação do dia selecionado -->
                 <div class="info-selected" id="calInfoSelected" style="display:none;">
-                    <span id="calInfoLabel">Selecione um dia</span>
+                    <span id="calInfoLabel"></span>
                     <button id="calClearSelection">✕ Limpar</button>
                 </div>
-                <!-- Tabela de transações do dia (inicialmente oculta) -->
-                <div class="table-container" id="calTabelaContainer" style="display:none; max-height:350px;">
+                <div class="table-container" id="calTabelaContainer" style="display:none;">
                     <table id="tabelaCalendarioTransacoes">
-                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Forma</th><th>Banco</th><th>Pessoa</th><th>Tipo</th></tr></thead>
+                        <thead><tr>
+                            <th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th>
+                            <th>Status</th><th>Forma Pag.</th><th>Banco</th><th>Pessoa</th><th>Tipo</th>
+                        </tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
-
-            <!-- ... resto das páginas (comparativo, análise mensal, etc.) ... -->
         </div>
     </div>
-
     <script>
-        // Mantenha TODO o JavaScript anterior, mas substitua apenas as funções relacionadas ao calendário.
-        // Vou colocar aqui o script completo para garantir que tudo funcione, com a parte do calendário corrigida.
         (function() {
             const $ = id => document.getElementById(id);
             const PUB_DOC = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub';
             const GID_DEB = '1145670122', GID_CRE = '902301839';
-            let debitos = [], creditos = [], charts = {};
-            const mesesNom = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-            const mesesAbrev = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            let debitos = [], creditos = [];
             let selectedDay = { ano: null, mes: null, dia: null };
+            const mesesNom = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            const fm = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2 });
 
-            // ... (todas as outras funções: toast, sidebar, parseCSV, fetchData, updateResumo, etc. permanecem as mesmas) ...
-            // Incluo apenas as funções modificadas/essenciais para o calendário.
+            async function fetchData(gid, tipo) {
+                const resp = await fetch(`${PUB_DOC}?gid=${gid}&single=true&output=csv`);
+                const txt = await resp.text();
+                const rows = txt.split('\n').filter(l => l.trim()).map(l => {
+                    const cols = []; let cur = '', q = false;
+                    for (const ch of l) { if (ch === '"') q = !q; else if (ch === ',' && !q) { cols.push(cur.trim()); cur = ''; } else cur += ch; }
+                    cols.push(cur.trim()); return cols;
+                });
+                const header = rows[0].map(h => h.toLowerCase().normalize('NFD').replace(/[^a-z]/g,''));
+                const idx = terms => { for (const t of terms) { const i = header.findIndex(h => h.includes(t)); if (i!==-1) return i; } return -1; };
+                const colData = idx(['data','date','dt']);
+                const colValor = idx(['valor','value','vlr']);
+                const colStatus = idx(['status','situacao','pago']);
+                const colForma = idx(['forma','formapagamento','pagamento']);
+                const colDesc = idx(['descricao','desc','nome','item']);
+                const colBanco = idx(['banco','bank','instituicao']);
+                const colCat = idx(['categoria','cat','tipo']);
+                const colPessoa = idx(['pessoa','nome','responsavel']);
+                return rows.slice(1).map(r => {
+                    const get = i => (i!==-1 && i<r.length) ? r[i] : '';
+                    const dataStr = get(colData);
+                    const parts = dataStr.split('/');
+                    const dia = +parts[0] || 1, mes = +parts[1] || 1, ano = +parts[2] || 2025;
+                    let valor = parseFloat((get(colValor)||'0').replace(/[R$\s]/g,'').replace(',','.')) || 0;
+                    return {
+                        data: dataStr, valor,
+                        status: get(colStatus) || 'Pendente',
+                        formaPagamento: get(colForma) || 'Não informado',
+                        descricao: get(colDesc) || '',
+                        banco: get(colBanco) || 'Não informado',
+                        categoria: get(colCat) || 'Outros',
+                        pessoa: get(colPessoa) || 'Geral',
+                        dia, mes, ano, tipo
+                    };
+                }).filter(x => x.data);
+            }
+
+            async function loadData() {
+                debitos = await fetchData(GID_DEB, 'debito');
+                creditos = await fetchData(GID_CRE, 'credito');
+                updateCalendario();
+            }
 
             function updateCalendario() {
-                const mes = +($('calMes')?.value || new Date().getMonth() + 1);
+                const mes = +($('calMes')?.value || new Date().getMonth()+1);
                 const ano = +($('calAno')?.value || new Date().getFullYear());
                 const grid = $('calendarGrid'); if (!grid) return;
                 const diasNoMes = new Date(ano, mes, 0).getDate();
-                const inicioSemana = new Date(ano, mes - 1, 1).getDay();
+                const inicioSemana = new Date(ano, mes-1, 1).getDay();
                 const hoje = new Date(); hoje.setHours(0,0,0,0);
                 const trans = [...creditos, ...debitos].filter(t => t.ano === ano && t.mes === mes);
                 const mapa = {};
-                for (const t of trans) { const d = t.dia; if (!mapa[d]) mapa[d] = { ent: 0, sai: 0 }; if (t.tipo === 'credito') mapa[d].ent += t.valor; else mapa[d].sai += t.valor; }
-                let et = 0, st = 0;
-                for (const d in mapa) { et += mapa[d].ent; st += mapa[d].sai; }
-                animKPI('calEntradasMes', et); animKPI('calSaidasMes', st); animKPI('calSaldoMes', et - st);
+                for (const t of trans) { const d = t.dia; if (!mapa[d]) mapa[d] = { ent:0, sai:0 }; if (t.tipo==='credito') mapa[d].ent += t.valor; else mapa[d].sai += t.valor; }
+                let et = 0, st = 0; for (const d in mapa) { et += mapa[d].ent; st += mapa[d].sai; }
+                $('calEntradasMes').textContent = `R$ ${fm(et)}`;
+                $('calSaidasMes').textContent = `R$ ${fm(st)}`;
+                $('calSaldoMes').textContent = `R$ ${fm(et-st)}`;
 
-                const ds = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-                let h = ds.map(d => `<div class="calendar-header-cell">${d}</div>`).join('');
-                for (let i = 0; i < inicioSemana; i++) h += '<div class="calendar-cell empty"></div>';
-                for (let dia = 1; dia <= diasNoMes; dia++) {
-                    const dc = new Date(ano, mes-1, dia);
-                    const isToday = dc.getTime() === hoje.getTime();
+                let h = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="calendar-header-cell">${d}</div>`).join('');
+                for (let i=0; i<inicioSemana; i++) h += '<div class="calendar-cell empty"></div>';
+                for (let dia=1; dia<=diasNoMes; dia++) {
+                    const isToday = new Date(ano, mes-1, dia).getTime() === hoje.getTime();
                     const isSelected = selectedDay.ano === ano && selectedDay.mes === mes && selectedDay.dia === dia;
                     const info = mapa[dia] || { ent:0, sai:0 };
-                    h += `<div class="calendar-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-dia="${dia}" data-mes="${mes}" data-ano="${ano}" title="Dia ${dia}: Entradas R$ ${fm(info.ent)} | Saídas R$ ${fm(info.sai)}">
+                    h += `<div class="calendar-cell${isToday?' today':''}${isSelected?' selected':''}" data-dia="${dia}" data-mes="${mes}" data-ano="${ano}">
                         <div class="day-num">${dia}</div>
                         ${info.ent>0?`<span class="mini-entrada">+${fm(info.ent)}</span>`:''}
                         ${info.sai>0?`<span class="mini-saida">-${fm(info.sai)}</span>`:''}
                     </div>`;
                 }
                 grid.innerHTML = h;
-
-                // Adiciona evento de clique para cada dia
                 grid.querySelectorAll('.calendar-cell[data-dia]').forEach(cell => {
-                    cell.addEventListener('click', function(e) {
-                        const dia = +this.dataset.dia;
-                        const mes = +this.dataset.mes;
-                        const ano = +this.dataset.ano;
-                        console.log('Dia clicado:', dia, mes, ano);
-                        selectedDay = { ano, mes, dia };
-                        updateCalendario(); // redesenha para destacar
-                        mostrarTransacoesDoDia(ano, mes, dia);
+                    cell.addEventListener('click', () => {
+                        selectedDay = { ano: +cell.dataset.ano, mes: +cell.dataset.mes, dia: +cell.dataset.dia };
+                        updateCalendario();
+                        mostrarTransacoesDoDia(selectedDay.ano, selectedDay.mes, selectedDay.dia);
                     });
                 });
-
-                // Se já existir um dia selecionado, exibe a tabela correspondente
                 if (selectedDay.ano && selectedDay.mes && selectedDay.dia) {
                     mostrarTransacoesDoDia(selectedDay.ano, selectedDay.mes, selectedDay.dia);
                 } else {
-                    esconderTabelaDia();
+                    $('calInfoSelected').style.display = 'none';
+                    $('calTabelaContainer').style.display = 'none';
                 }
             }
 
             function mostrarTransacoesDoDia(ano, mes, dia) {
-                console.log('Mostrando transações para', ano, mes, dia);
                 const trans = [...creditos, ...debitos].filter(t => t.ano === ano && t.mes === mes && t.dia === dia);
-                const infoLabel = $('calInfoLabel');
-                const infoBar = $('calInfoSelected');
-                const tabelaContainer = $('calTabelaContainer');
-
-                if (infoBar) {
-                    infoBar.style.display = 'flex';
-                    if (infoLabel) infoLabel.textContent = `📅 Transações de ${dia}/${mes}/${ano} — ${trans.length} registro(s)`;
-                }
-                if (tabelaContainer) {
-                    tabelaContainer.style.display = 'block';
-                    const tbody = document.querySelector('#tabelaCalendarioTransacoes tbody');
-                    if (tbody) {
-                        tbody.innerHTML = '';
-                        if (trans.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhuma transação neste dia.</td></tr>';
-                        } else {
-                            const frag = document.createDocumentFragment();
-                            for (const t of trans) {
-                                const tr = document.createElement('tr');
-                                tr.className = t.tipo === 'debito' ? 'debito-row' : 'credito-row';
-                                tr.innerHTML = `
-                                    <td>${t.data}</td>
-                                    <td>${t.descricao}</td>
-                                    <td>${t.categoria}</td>
-                                    <td style="color:${t.tipo==='debito'?'var(--danger)':'var(--success)'};font-weight:600;">R$ ${fm(t.valor)}</td>
-                                    <td>${t.status}</td>
-                                    <td>${t.formaPagamento}</td>
-                                    <td>${t.banco}</td>
-                                    <td>${t.pessoa}</td>
-                                    <td>${t.tipo === 'credito' ? '🟢 Crédito' : '🔴 Débito'}</td>
-                                `;
-                                frag.appendChild(tr);
-                            }
-                            tbody.appendChild(frag);
-                        }
-                    }
-                }
+                $('calInfoSelected').style.display = 'flex';
+                $('calInfoLabel').textContent = `📅 ${dia}/${mes}/${ano} — ${trans.length} transação(oes)`;
+                $('calTabelaContainer').style.display = 'block';
+                const tbody = document.querySelector('#tabelaCalendarioTransacoes tbody');
+                tbody.innerHTML = trans.map(t => `
+                    <tr class="${t.tipo==='debito'?'debito-row':'credito-row'}">
+                        <td>${t.data}</td>
+                        <td>${t.descricao}</td>
+                        <td>${t.categoria}</td>
+                        <td style="color:${t.tipo==='debito'?'var(--danger)':'var(--success)'}; font-weight:600;">R$ ${fm(t.valor)}</td>
+                        <td>${t.status}</td>
+                        <td>${t.formaPagamento}</td>
+                        <td>${t.banco}</td>
+                        <td>${t.pessoa}</td>
+                        <td>${t.tipo==='credito'?'🟢 Crédito':'🔴 Débito'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="9">Nenhuma transação neste dia.</td></tr>';
             }
 
-            function esconderTabelaDia() {
-                const infoBar = $('calInfoSelected');
-                const tabelaContainer = $('calTabelaContainer');
-                if (infoBar) infoBar.style.display = 'none';
-                if (tabelaContainer) tabelaContainer.style.display = 'none';
-                selectedDay = { ano: null, mes: null, dia: null };
-            }
+            $('calClearSelection').onclick = () => { selectedDay = {}; updateCalendario(); };
+            $('calHojeBtn').onclick = () => { const hj = new Date(); $('calMes').value = hj.getMonth()+1; $('calAno').value = hj.getFullYear(); selectedDay = {}; updateCalendario(); };
+            $('calAnteriorBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m--; if(m<1){ m=12; a--; } $('calMes').value = m; $('calAno').value = a; selectedDay = {}; updateCalendario(); };
+            $('calProximoBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m++; if(m>12){ m=1; a++; } $('calMes').value = m; $('calAno').value = a; selectedDay = {}; updateCalendario(); };
 
-            // ... (manter funções de eventos e loadData) ...
-            // Certifique-se de que os eventos dos botões do calendário chamam updateCalendario com selectedDay resetado.
-            $('calMes').onchange = () => { selectedDay = { ano: null, mes: null, dia: null }; updateCalendario(); };
-            $('calAno').onchange = () => { selectedDay = { ano: null, mes: null, dia: null }; updateCalendario(); };
-            $('calHojeBtn').onclick = () => { const hj = new Date(); $('calMes').value = hj.getMonth()+1; $('calAno').value = hj.getFullYear(); selectedDay = { ano: null, mes: null, dia: null }; updateCalendario(); };
-            $('calAnteriorBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m--; if(m<1){ m=12; a--; } $('calMes').value = m; $('calAno').value = a; selectedDay = { ano: null, mes: null, dia: null }; updateCalendario(); };
-            $('calProximoBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m++; if(m>12){ m=1; a++; } $('calMes').value = m; $('calAno').value = a; selectedDay = { ano: null, mes: null, dia: null }; updateCalendario(); };
-            $('calClearSelection').onclick = () => {
-                esconderTabelaDia();
-                updateCalendario();
-            };
+            const anosDisponiveis = [2023,2024,2025,2026];
+            $('calAno').innerHTML = anosDisponiveis.map(a => `<option value="${a}">${a}</option>`).join('');
+            $('calAno').value = new Date().getFullYear();
+            $('calMes').innerHTML = mesesNom.map((n,i) => `<option value="${i+1}">${n}</option>`).join('');
+            $('calMes').value = new Date().getMonth()+1;
+            $('calMes').onchange = () => { selectedDay = {}; updateCalendario(); };
+            $('calAno').onchange = () => { selectedDay = {}; updateCalendario(); };
 
-            // ... (todo o resto do script, incluindo loadData etc.) ...
-            // IMPORTANTE: carregar as outras funções (updateResumo, updateLista, etc.) exatamente como antes.
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                $(btn.dataset.page).classList.add('active');
+            });
+
+            $('darkModeToggle').onclick = () => document.body.classList.toggle('dark');
+
+            loadData();
         })();
     </script>
 </body>
