@@ -664,6 +664,14 @@
             color: var(--danger);
             font-weight: 600;
         }
+        .best-month {
+            background: rgba(16, 185, 129, 0.08);
+            font-weight: 700;
+        }
+        .worst-month {
+            background: rgba(239, 68, 68, 0.08);
+            font-weight: 700;
+        }
         @media (max-width:768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -717,6 +725,7 @@
             <button class="tab-btn" data-page="inadimplencia">🚨 <span class="nav-text">Inadimplência</span> <span class="badge"
                     id="badgePendentes">0</span></button>
             <button class="tab-btn" data-page="calendario">📅 <span class="nav-text">Calendário</span></button>
+            <button class="tab-btn" data-page="analisemensal">🔍 <span class="nav-text">Análise Mensal</span></button>
         </nav>
         <div class="sidebar-footer"><button class="btn" id="printBtnSide">🖨️ Imprimir</button></div>
     </aside>
@@ -1007,13 +1016,49 @@
                     </table>
                 </div>
             </div>
+
+            <!-- ANÁLISE MENSAL (NOVA PÁGINA) -->
+            <div id="analisemensal" class="page">
+                <div class="cards-row">
+                    <div class="card card-entrada"><div class="card-title">🏆 Melhor Mês</div><div class="card-value entrada"
+                            id="amMelhorMes" style="font-size:1.1rem;">-</div></div>
+                    <div class="card card-saida"><div class="card-title">⚠️ Pior Mês</div><div class="card-value saida"
+                            id="amPiorMes" style="font-size:1.1rem;">-</div></div>
+                    <div class="card card-saldo"><div class="card-title">📊 Média Mensal</div><div class="card-value saldo"
+                            id="amMediaMensal">R$ 0,00</div></div>
+                    <div class="card"><div class="card-title">📈 Meses Positivos</div><div class="card-value" id="amMesesPositivos"
+                            style="color:var(--success);">0</div></div>
+                </div>
+                <div class="filter-bar" id="filtroAnaliseMensal">
+                    <div class="filter-group"><label>Ano</label><select id="amAno"><option value="">Todos</option></select></div>
+                    <button class="btn" id="limparFiltrosAnaliseMensal">Limpar</button>
+                </div>
+                <div class="table-container" style="max-height:500px;">
+                    <table id="tabelaAnaliseMensal">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Receitas (R$)</th>
+                                <th>Despesas (R$)</th>
+                                <th>Saldo (R$)</th>
+                                <th>Margem (%)</th>
+                                <th>Acumulado (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-box"><h3>📊 Receitas vs Despesas</h3><canvas id="amGraficoBarras"></canvas></div>
+                    <div class="chart-box"><h3>📈 Saldo Acumulado</h3><canvas id="amGraficoAcumulado"></canvas></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         (function() {
             const $ = id => document.getElementById(id);
-            // NOVA PLANILHA (publicada como CSV) – IDs das abas fornecidos pelo usuário
             const PUB_DOC =
                 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub';
             const GID_DEB = '1145670122',
@@ -1372,6 +1417,15 @@
                         anoSelect.value = new Date().getFullYear();
                     }
                 }
+
+                // Preenche filtro de ano da Análise Mensal
+                const amAno = $('amAno');
+                if (amAno) {
+                    const anosUnicos = [...new Set(all.map(t => t.ano))].sort((a, b) => b - a);
+                    amAno.innerHTML = '<option value="">Todos</option>' + anosUnicos.map(a =>
+                        `<option value="${a}">${a}</option>`).join('');
+                    if (anosUnicos.length > 0) amAno.value = String(anosUnicos[0]);
+                }
             }
 
             function setupFilters() { const cs = { res: 'filtroResumo', deb: 'filtroDebitos', cred: 'filtroCreditos',
@@ -1705,6 +1759,165 @@
                 tbody.appendChild(frag);
             }
 
+            /* ===== ANÁLISE MENSAL (NOVA PÁGINA) ===== */
+            function updateAnaliseMensal() {
+                const anoFiltro = $('amAno')?.value || '';
+
+                // Agrupa todos os dados por mês (considerando o filtro de ano)
+                const todos = [...creditos, ...debitos];
+                const dadosFiltrados = anoFiltro ? todos.filter(t => t.ano === +anoFiltro) : todos;
+
+                // Mapa: chave "ano-mes" -> { rec, des }
+                const mapaMensal = new Map();
+                for (const t of dadosFiltrados) {
+                    const chave = `${t.ano}-${String(t.mes).padStart(2, '0')}`;
+                    if (!mapaMensal.has(chave)) mapaMensal.set(chave, { rec: 0, des: 0, ano: t.ano, mes: t.mes });
+                    const entry = mapaMensal.get(chave);
+                    if (t.tipo === 'credito') entry.rec += t.valor;
+                    else entry.des += t.valor;
+                }
+
+                // Ordena as chaves cronologicamente
+                const chavesOrdenadas = [...mapaMensal.keys()].sort(compareMonthKeys);
+
+                if (chavesOrdenadas.length === 0) {
+                    $('amMelhorMes').textContent = '-';
+                    $('amPiorMes').textContent = '-';
+                    $('amMediaMensal').textContent = 'R$ 0,00';
+                    $('amMesesPositivos').textContent = '0';
+                    const tbody = document.querySelector('#tabelaAnaliseMensal tbody');
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum dado encontrado</td></tr>';
+                    destroy('amGraficoBarras');
+                    destroy('amGraficoAcumulado');
+                    return;
+                }
+
+                // Prepara arrays para tabela e gráficos
+                const linhas = [];
+                let acumulado = 0;
+                let melhorSaldo = -Infinity,
+                    piorSaldo = Infinity;
+                let melhorMesNome = '',
+                    piorMesNome = '';
+                let somaSaldo = 0;
+                let mesesPositivos = 0;
+
+                const labels = [];
+                const receitasArr = [];
+                const despesasArr = [];
+                const saldoArr = [];
+                const acumuladoArr = [];
+
+                for (const chave of chavesOrdenadas) {
+                    const d = mapaMensal.get(chave);
+                    const saldo = d.rec - d.des;
+                    const margem = d.rec > 0 ? (saldo / d.rec) * 100 : 0;
+                    acumulado += saldo;
+                    somaSaldo += saldo;
+                    if (saldo > 0) mesesPositivos++;
+
+                    const nomeMes = `${mesesAbrev[d.mes - 1]}/${d.ano}`;
+                    linhas.push({ nomeMes, rec: d.rec, des: d.des, saldo, margem, acumulado, ano: d.ano, mes: d.mes });
+
+                    if (saldo > melhorSaldo) { melhorSaldo = saldo;
+                        melhorMesNome = nomeMes; }
+                    if (saldo < piorSaldo) { piorSaldo = saldo;
+                        piorMesNome = nomeMes; }
+
+                    labels.push(nomeMes);
+                    receitasArr.push(d.rec);
+                    despesasArr.push(d.des);
+                    saldoArr.push(saldo);
+                    acumuladoArr.push(acumulado);
+                }
+
+                const mediaMensal = somaSaldo / linhas.length;
+
+                // Atualiza KPIs
+                $('amMelhorMes').textContent = melhorMesNome ? `${melhorMesNome} (R$ ${fm(melhorSaldo)})` : '-';
+                $('amPiorMes').textContent = piorMesNome ? `${piorMesNome} (R$ ${fm(piorSaldo)})` : '-';
+                animKPI('amMediaMensal', mediaMensal);
+                $('amMediaMensal').style.color = mediaMensal >= 0 ? 'var(--success)' : 'var(--danger)';
+                $('amMesesPositivos').textContent = `${mesesPositivos} de ${linhas.length}`;
+
+                // Tabela
+                const tbody = document.querySelector('#tabelaAnaliseMensal tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    const frag = document.createDocumentFragment();
+                    for (const l of linhas) {
+                        const tr = document.createElement('tr');
+                        if (l.saldo === melhorSaldo) tr.classList.add('best-month');
+                        if (l.saldo === piorSaldo) tr.classList.add('worst-month');
+                        tr.innerHTML = `
+                            <td><strong>${l.nomeMes}</strong></td>
+                            <td style="color:var(--success);">R$ ${fm(l.rec)}</td>
+                            <td style="color:var(--danger);">R$ ${fm(l.des)}</td>
+                            <td style="color:${l.saldo >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:600;">R$ ${fm(l.saldo)}</td>
+                            <td>${l.rec === 0 ? 'N/A' : fmp(l.margem)}</td>
+                            <td style="color:${l.acumulado >= 0 ? 'var(--success)' : 'var(--danger)'};">R$ ${fm(l.acumulado)}</td>
+                        `;
+                        frag.appendChild(tr);
+                    }
+                    tbody.appendChild(frag);
+                }
+
+                // Gráfico de barras: Receitas vs Despesas
+                const ctxBarras = ctx('amGraficoBarras');
+                if (ctxBarras) {
+                    charts['amGraficoBarras'] = new Chart(ctxBarras, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                { label: 'Receitas', data: receitasArr, backgroundColor: '#10b981',
+                                    borderRadius: 6 },
+                                { label: 'Despesas', data: despesasArr, backgroundColor: '#ef4444',
+                                    borderRadius: 6 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: { callbacks: { label: x => `${x.dataset.label}: R$ ${fm(x.raw)}` } }
+                            },
+                            scales: { y: { ticks: { callback: v => `R$ ${fm(v)}` } } }
+                        }
+                    });
+                }
+
+                // Gráfico de linha: Saldo Acumulado
+                const ctxAcum = ctx('amGraficoAcumulado');
+                if (ctxAcum) {
+                    charts['amGraficoAcumulado'] = new Chart(ctxAcum, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Saldo Acumulado',
+                                data: acumuladoArr,
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99,102,241,0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                borderWidth: 2.5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: { callbacks: { label: x =>
+                                        `Acumulado: R$ ${fm(x.raw)}` } }
+                            },
+                            scales: { y: { ticks: { callback: v => `R$ ${fm(v)}` } } }
+                        }
+                    });
+                }
+            }
+
             /* ===== EVENTOS E INICIALIZAÇÃO ===== */
             function bindEvents(pref, fn) {
                 ['Categoria', 'Pessoa', 'Status', 'FormaPagamento', 'Banco', 'Ano', 'Mes', 'Dia', 'Tipo'].forEach(s => {
@@ -1801,6 +2014,15 @@
                     $('credCalMes').value = m;
                     $('credCalAno').value = a;
                     updateCredCalendar(); };
+
+                // Eventos da Análise Mensal
+                const amAno = $('amAno');
+                if (amAno) amAno.onchange = updateAnaliseMensal;
+                const limparAm = $('limparFiltrosAnaliseMensal');
+                if (limparAm) limparAm.onclick = () => {
+                    if (amAno) amAno.value = '';
+                    updateAnaliseMensal();
+                };
             }
 
             /* ===== RELÓGIO ===== */
@@ -1831,9 +2053,13 @@
                     btn.classList.add('active');
                     btn.setAttribute('aria-current', 'page');
                     const page = $(btn.dataset.page);
-                    if (page) { page.classList.add('active');
+                    if (page) {
+                        page.classList.add('active');
                         setTimeout(() => Object.values(charts).forEach(ch => ch && ch.resize && ch.resize()),
-                            150); }
+                            150);
+                        // Dispara atualização quando a página de análise mensal é aberta
+                        if (btn.dataset.page === 'analisemensal') updateAnaliseMensal();
+                    }
                 };
             });
 
@@ -1871,6 +2097,7 @@
                     updateComparativoAnual();
                     updateDebCalendar();
                     updateCredCalendar();
+                    updateAnaliseMensal();
                     toast('✅ Dados carregados!', 'success');
                 } catch (e) {
                     console.error(e);
