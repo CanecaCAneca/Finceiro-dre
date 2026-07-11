@@ -45,13 +45,28 @@
             background-image: radial-gradient(ellipse at 50% 0%, var(--accent-light) 0%, transparent 70%);
             background-size: 100% 400px;
             background-repeat: no-repeat;
-            display: flex; min-height: 100vh; color: var(--text); transition: background 0.2s, color 0.2s;
+            display: flex;
+            min-height: 100vh;
+            color: var(--text);
+            transition: background 0.2s, color 0.2s;
         }
         .sidebar {
-            width: var(--sidebar-width); background: rgba(255,255,255,0.65); backdrop-filter: blur(20px);
-            padding: 24px 14px; display: flex; flex-direction: column; gap: 3px;
-            border-radius: 0 24px 24px 0; box-shadow: var(--shadow-lg); position: fixed; top:0; left:0; bottom:0; z-index:100;
-            overflow-y: auto; overflow-x: hidden; border: 1px solid var(--border); transition: width 0.3s ease, padding 0.3s ease;
+            width: var(--sidebar-width);
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(20px);
+            padding: 24px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            border-radius: 0 24px 24px 0;
+            box-shadow: var(--shadow-lg);
+            position: fixed;
+            top:0; left:0; bottom:0;
+            z-index: 100;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--border);
+            transition: width 0.3s ease, padding 0.3s ease;
         }
         .sidebar.collapsed { width: var(--sidebar-collapsed-width); padding: 24px 8px; }
         body.dark .sidebar { background: rgba(15,23,42,0.75); }
@@ -62,9 +77,9 @@
         .sidebar-minimize { font-size: 1.2rem; }
         .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
         .sidebar nav button {
-            background: none; border: none; padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 0.8rem;
-            text-align: left; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;
-            transition: all 0.2s; white-space: nowrap; overflow: hidden;
+            background: none; border: none; padding: 10px 14px; border-radius: 12px; font-weight: 600;
+            font-size: 0.8rem; text-align: left; cursor: pointer; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 10px; transition: all 0.2s; white-space: nowrap; overflow: hidden;
         }
         .sidebar nav button .nav-text { transition: opacity 0.2s, width 0.2s; opacity: 1; width: auto; }
         .sidebar.collapsed nav button .nav-text { opacity: 0; width: 0; display: inline-block; overflow: hidden; }
@@ -107,9 +122,20 @@
         th { background:rgba(248,250,253,0.9); padding:12px 10px; text-align:left; font-weight:700; color:var(--text-secondary); position:sticky; top:0; z-index:1; text-transform:uppercase; letter-spacing:0.5px; font-size:0.65rem; border-bottom:2px solid var(--border); }
         body.dark th { background:rgba(30,41,59,0.95); }
         td { padding:10px; border-bottom:1px solid var(--border); color:var(--text); }
-        .charts-row { display:flex; flex-wrap:wrap; gap:18px; }
-        .chart-box { flex:1 1 380px; background:var(--card-bg); backdrop-filter:blur(10px); border-radius:20px; padding:18px 20px; box-shadow:var(--shadow); border:1px solid var(--border); }
-        canvas { max-height:260px; width:100% !important; }
+        tr:hover td { background:rgba(99,102,241,0.03); }
+        .debito-row td:first-child { border-left:3px solid var(--danger); }
+        .credito-row td:first-child { border-left:3px solid var(--success); }
+        .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; background:var(--card-bg); border-radius:20px; padding:12px; border:1px solid var(--border); }
+        .calendar-header-cell { text-align:center; font-weight:700; padding:8px; font-size:0.68rem; color:var(--text-secondary); }
+        .calendar-cell { background:var(--card-solid); border:1px solid var(--border); border-radius:10px; padding:6px; min-height:60px; font-size:0.7rem; cursor:pointer; transition:all 0.2s; }
+        .calendar-cell.today { border:2px solid var(--accent); }
+        .calendar-cell.selected { background:rgba(99,102,241,0.2); border:2px solid var(--accent); }
+        .info-selected {
+            background:var(--card-bg); border-radius:16px; padding:12px 18px; display:flex;
+            align-items:center; gap:12px; border:1px solid var(--accent-light);
+        }
+        .mini-entrada { font-size:0.58rem; color:var(--success); font-weight:600; }
+        .mini-saida { font-size:0.58rem; color:var(--danger); font-weight:600; }
         @media (max-width:768px) {
             .sidebar { transform:translateX(-100%); }
             .sidebar.open { transform:translateX(0); }
@@ -121,44 +147,50 @@
 <body>
     <button class="menu-toggle" id="menuToggle">☰</button>
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h2>📊 Gestão</h2><button class="sidebar-minimize" id="sidebarMinimize">◀</button></div>
+        <div class="sidebar-header">
+            <h2>📊 Gestão</h2>
+            <button class="sidebar-minimize" id="sidebarMinimize">◀</button>
+        </div>
         <nav>
             <button class="tab-btn active" data-page="resumo">📋 <span class="nav-text">Resumo Geral</span></button>
-            <button class="tab-btn" data-page="debitos">🔴 <span class="nav-text">Débitos</span></button>
-            <button class="tab-btn" data-page="creditos">🟢 <span class="nav-text">Créditos</span></button>
-            <button class="tab-btn" data-page="dre">🧾 <span class="nav-text">D.R.E.</span></button>
             <button class="tab-btn" data-page="calendario">📅 <span class="nav-text">Calendário</span></button>
         </nav>
     </aside>
     <div class="main-content" id="mainContent">
         <div class="dashboard">
-            <div class="header"><h1>📊 Gestão Financeira Premium</h1><button class="btn" id="darkModeToggle">🌙</button></div>
-
-            <!-- D.R.E. -->
-            <div id="dre" class="page">
+            <div class="header">
+                <h1>📊 Gestão Financeira Premium</h1>
+                <button class="btn" id="darkModeToggle">🌙</button>
+            </div>
+            <div id="resumo" class="page active"><p>Resumo Geral (em construção)</p></div>
+            <div id="calendario" class="page">
                 <div class="cards-row">
-                    <div class="card card-entrada"><div class="card-title">💰 Receita Bruta</div><div class="card-value entrada" id="dreReceita">R$ 0,00</div></div>
-                    <div class="card card-saida"><div class="card-title">📤 Despesas</div><div class="card-value saida" id="dreDespesa">R$ 0,00</div></div>
-                    <div class="card card-saldo"><div class="card-title">⚖️ Resultado</div><div class="card-value saldo" id="dreResultado">R$ 0,00</div></div>
-                    <div class="card"><div class="card-title">📊 Margem</div><div class="card-value" id="dreMargem">0,0%</div></div>
+                    <div class="card card-entrada"><div class="card-title">💰 Entradas do Mês</div><div class="card-value entrada" id="calEntradasMes">R$ 0,00</div></div>
+                    <div class="card card-saida"><div class="card-title">📤 Saídas do Mês</div><div class="card-value saida" id="calSaidasMes">R$ 0,00</div></div>
+                    <div class="card card-saldo"><div class="card-title">⚖️ Saldo do Mês</div><div class="card-value saldo" id="calSaldoMes">R$ 0,00</div></div>
                 </div>
-                <div class="filter-bar" id="filtroDre">
-                    <div class="filter-group"><label>Ano</label><select id="dreAno"><option value="">Todos</option></select></div>
-                    <div class="filter-group"><label>Mês</label><select id="dreMes"><option value="">Todos</option></select></div>
-                    <button class="btn" id="limparFiltrosDre">Limpar</button>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--card-bg); border-radius:20px; padding:14px 18px; border:1px solid var(--border);">
+                    <div class="filter-group"><label>Mês</label><select id="calMes"></select></div>
+                    <div class="filter-group"><label>Ano</label><select id="calAno"></select></div>
+                    <button class="btn" id="calHojeBtn" style="background:var(--accent);color:#fff;">📍 Hoje</button>
+                    <button class="btn" id="calAnteriorBtn">◀</button>
+                    <button class="btn" id="calProximoBtn">▶</button>
                 </div>
-                <div class="table-container">
-                    <table id="tabelaDRE">
-                        <thead><tr><th>Conta</th><th>Valor (R$)</th><th>%</th></tr></thead>
+                <div class="calendar-grid" id="calendarGrid"></div>
+                <div class="info-selected" id="calInfoSelected" style="display:none;">
+                    <span id="calInfoLabel"></span>
+                    <button id="calClearSelection">✕ Limpar</button>
+                </div>
+                <div class="table-container" id="calTabelaContainer" style="display:none;">
+                    <table id="tabelaCalendarioTransacoes">
+                        <thead><tr>
+                            <th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th>
+                            <th>Status</th><th>Forma Pag.</th><th>Banco</th><th>Pessoa</th><th>Tipo</th>
+                        </tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="charts-row">
-                    <div class="chart-box"><h3>🥧 Receitas</h3><canvas id="drePizzaReceitas"></canvas></div>
-                    <div class="chart-box"><h3>🥧 Despesas</h3><canvas id="drePizzaDespesas"></canvas></div>
-                </div>
             </div>
-            <!-- Outras páginas (resumo, débitos, créditos, calendário) omitidas por brevidade -->
         </div>
     </div>
     <script>
@@ -166,10 +198,10 @@
             const $ = id => document.getElementById(id);
             const PUB_DOC = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWlUNgP29Erp8Rh5AZPg430wul7T9IwPBPgozPQpO2ig9g8gpJoTn4JNfcKAbBSNH59VngkPE4A7dF/pub';
             const GID_DEB = '1145670122', GID_CRE = '902301839';
-            let debitos = [], creditos = [], charts = {};
+            let debitos = [], creditos = [];
+            let selectedDay = { ano: null, mes: null, dia: null };
+            const mesesNom = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
             const fm = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2 });
-            const fmp = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits:1 }) + '%';
-            const sumBy = (arr, fn) => { let t=0; for(const i of arr) if(fn(i)) t+=i.valor; return Math.round(t*100)/100; };
 
             async function fetchData(gid, tipo) {
                 const resp = await fetch(`${PUB_DOC}?gid=${gid}&single=true&output=csv`);
@@ -183,72 +215,121 @@
                 const idx = terms => { for (const t of terms) { const i = header.findIndex(h => h.includes(t)); if (i!==-1) return i; } return -1; };
                 const colData = idx(['data','date','dt']);
                 const colValor = idx(['valor','value','vlr']);
-                const colDesc = idx(['descricao','desc','nome']);
+                const colStatus = idx(['status','situacao','pago']);
+                const colForma = idx(['forma','formapagamento','pagamento']);
+                const colDesc = idx(['descricao','desc','nome','item']);
+                const colBanco = idx(['banco','bank','instituicao']);
                 const colCat = idx(['categoria','cat','tipo']);
+                const colPessoa = idx(['pessoa','nome','responsavel']);
                 return rows.slice(1).map(r => {
                     const get = i => (i!==-1 && i<r.length) ? r[i] : '';
                     const dataStr = get(colData);
                     const parts = dataStr.split('/');
                     const dia = +parts[0] || 1, mes = +parts[1] || 1, ano = +parts[2] || 2025;
                     let valor = parseFloat((get(colValor)||'0').replace(/[R$\s]/g,'').replace(',','.')) || 0;
-                    return { data: dataStr, valor, descricao: get(colDesc), categoria: get(colCat) || 'Outros', dia, mes, ano, tipo };
+                    return {
+                        data: dataStr, valor,
+                        status: get(colStatus) || 'Pendente',
+                        formaPagamento: get(colForma) || 'Não informado',
+                        descricao: get(colDesc) || '',
+                        banco: get(colBanco) || 'Não informado',
+                        categoria: get(colCat) || 'Outros',
+                        pessoa: get(colPessoa) || 'Geral',
+                        dia, mes, ano, tipo
+                    };
                 }).filter(x => x.data);
-            }
-
-            function updateDRE() {
-                const ano = $('dreAno')?.value || '';
-                const mes = $('dreMes')?.value || '';
-                const rec = creditos.filter(t => (!ano || t.ano === +ano) && (!mes || t.mes === +mes));
-                const desp = debitos.filter(t => (!ano || t.ano === +ano) && (!mes || t.mes === +mes));
-                const tr = sumBy(rec, ()=>true), td = sumBy(desp, ()=>true), res = tr - td;
-                const mg = tr > 0 ? (res/tr)*100 : 0;
-                $('dreReceita').textContent = `R$ ${fm(tr)}`;
-                $('dreDespesa').textContent = `R$ ${fm(td)}`;
-                $('dreResultado').textContent = `R$ ${fm(res)}`;
-                $('dreMargem').textContent = tr === 0 ? 'N/A' : fmp(mg);
-
-                const cr = {}, cd = {};
-                for (const c of rec) cr[c.categoria] = (cr[c.categoria]||0) + c.valor;
-                for (const d of desp) cd[d.categoria] = (cd[d.categoria]||0) + d.valor;
-
-                if (charts['drePizzaReceitas']) charts['drePizzaReceitas'].destroy();
-                if (charts['drePizzaDespesas']) charts['drePizzaDespesas'].destroy();
-                const ctx1 = $('drePizzaReceitas')?.getContext('2d');
-                if (ctx1) charts['drePizzaReceitas'] = new Chart(ctx1, { type:'doughnut', data:{ labels:Object.keys(cr), datasets:[{ data:Object.values(cr), backgroundColor:['#10b981','#34d399','#6ee7b7'] }] } });
-                const ctx2 = $('drePizzaDespesas')?.getContext('2d');
-                if (ctx2) charts['drePizzaDespesas'] = new Chart(ctx2, { type:'doughnut', data:{ labels:Object.keys(cd), datasets:[{ data:Object.values(cd), backgroundColor:['#ef4444','#f87171','#fca5a5'] }] } });
-
-                const tbody = document.querySelector('#tabelaDRE tbody');
-                tbody.innerHTML = '';
-                const add = (c, v, p) => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${c}</td><td>R$ ${fm(v)}</td><td>${p}</td>`; tbody.appendChild(tr); };
-                add('<strong>RECEITAS</strong>', '', '');
-                for (const [c,v] of Object.entries(cr).sort((a,b)=>b[1]-a[1])) add(c, v, tr>0?fmp((v/tr)*100):'0,0%');
-                add('<strong>Total Receitas</strong>', tr, '100,0%');
-                add('<strong>DESPESAS</strong>', '', '');
-                for (const [c,v] of Object.entries(cd).sort((a,b)=>b[1]-a[1])) add(c, v, td>0?fmp((v/td)*100):'0,0%');
-                add('<strong>Total Despesas</strong>', td, '100,0%');
-                add(`<strong>RESULTADO</strong>`, res, tr===0?'N/A':fmp(mg));
             }
 
             async function loadData() {
                 debitos = await fetchData(GID_DEB, 'debito');
                 creditos = await fetchData(GID_CRE, 'credito');
-                const all = [...debitos, ...creditos];
-                const anos = [...new Set(all.map(t=>t.ano))].sort((a,b)=>b-a);
-                const preencher = (id, valores) => { const s = $(id); if(s) { s.innerHTML = '<option value="">Todos</option>' + valores.map(v => `<option value="${v}">${v}</option>`).join(''); } };
-                preencher('dreAno', anos);
-                preencher('dreMes', Array.from({length:12},(_,i)=>i+1));
-                $('dreAno').onchange = updateDRE;
-                $('dreMes').onchange = updateDRE;
-                $('limparFiltrosDre').onclick = () => { $('dreAno').value = ''; $('dreMes').value = ''; updateDRE(); };
-                updateDRE();
+                updateCalendario();
             }
+
+            function updateCalendario() {
+                const mes = +($('calMes')?.value || new Date().getMonth()+1);
+                const ano = +($('calAno')?.value || new Date().getFullYear());
+                const grid = $('calendarGrid'); if (!grid) return;
+                const diasNoMes = new Date(ano, mes, 0).getDate();
+                const inicioSemana = new Date(ano, mes-1, 1).getDay();
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const trans = [...creditos, ...debitos].filter(t => t.ano === ano && t.mes === mes);
+                const mapa = {};
+                for (const t of trans) { const d = t.dia; if (!mapa[d]) mapa[d] = { ent:0, sai:0 }; if (t.tipo==='credito') mapa[d].ent += t.valor; else mapa[d].sai += t.valor; }
+                let et = 0, st = 0; for (const d in mapa) { et += mapa[d].ent; st += mapa[d].sai; }
+                $('calEntradasMes').textContent = `R$ ${fm(et)}`;
+                $('calSaidasMes').textContent = `R$ ${fm(st)}`;
+                $('calSaldoMes').textContent = `R$ ${fm(et-st)}`;
+
+                let h = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="calendar-header-cell">${d}</div>`).join('');
+                for (let i=0; i<inicioSemana; i++) h += '<div class="calendar-cell empty"></div>';
+                for (let dia=1; dia<=diasNoMes; dia++) {
+                    const isToday = new Date(ano, mes-1, dia).getTime() === hoje.getTime();
+                    const isSelected = selectedDay.ano === ano && selectedDay.mes === mes && selectedDay.dia === dia;
+                    const info = mapa[dia] || { ent:0, sai:0 };
+                    h += `<div class="calendar-cell${isToday?' today':''}${isSelected?' selected':''}" data-dia="${dia}" data-mes="${mes}" data-ano="${ano}">
+                        <div class="day-num">${dia}</div>
+                        ${info.ent>0?`<span class="mini-entrada">+${fm(info.ent)}</span>`:''}
+                        ${info.sai>0?`<span class="mini-saida">-${fm(info.sai)}</span>`:''}
+                    </div>`;
+                }
+                grid.innerHTML = h;
+                grid.querySelectorAll('.calendar-cell[data-dia]').forEach(cell => {
+                    cell.addEventListener('click', () => {
+                        selectedDay = { ano: +cell.dataset.ano, mes: +cell.dataset.mes, dia: +cell.dataset.dia };
+                        updateCalendario();
+                        mostrarTransacoesDoDia(selectedDay.ano, selectedDay.mes, selectedDay.dia);
+                    });
+                });
+                if (selectedDay.ano && selectedDay.mes && selectedDay.dia) {
+                    mostrarTransacoesDoDia(selectedDay.ano, selectedDay.mes, selectedDay.dia);
+                } else {
+                    $('calInfoSelected').style.display = 'none';
+                    $('calTabelaContainer').style.display = 'none';
+                }
+            }
+
+            function mostrarTransacoesDoDia(ano, mes, dia) {
+                const trans = [...creditos, ...debitos].filter(t => t.ano === ano && t.mes === mes && t.dia === dia);
+                $('calInfoSelected').style.display = 'flex';
+                $('calInfoLabel').textContent = `📅 ${dia}/${mes}/${ano} — ${trans.length} transação(oes)`;
+                $('calTabelaContainer').style.display = 'block';
+                const tbody = document.querySelector('#tabelaCalendarioTransacoes tbody');
+                tbody.innerHTML = trans.map(t => `
+                    <tr class="${t.tipo==='debito'?'debito-row':'credito-row'}">
+                        <td>${t.data}</td>
+                        <td>${t.descricao}</td>
+                        <td>${t.categoria}</td>
+                        <td style="color:${t.tipo==='debito'?'var(--danger)':'var(--success)'}; font-weight:600;">R$ ${fm(t.valor)}</td>
+                        <td>${t.status}</td>
+                        <td>${t.formaPagamento}</td>
+                        <td>${t.banco}</td>
+                        <td>${t.pessoa}</td>
+                        <td>${t.tipo==='credito'?'🟢 Crédito':'🔴 Débito'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="9">Nenhuma transação neste dia.</td></tr>';
+            }
+
+            $('calClearSelection').onclick = () => { selectedDay = {}; updateCalendario(); };
+            $('calHojeBtn').onclick = () => { const hj = new Date(); $('calMes').value = hj.getMonth()+1; $('calAno').value = hj.getFullYear(); selectedDay = {}; updateCalendario(); };
+            $('calAnteriorBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m--; if(m<1){ m=12; a--; } $('calMes').value = m; $('calAno').value = a; selectedDay = {}; updateCalendario(); };
+            $('calProximoBtn').onclick = () => { let m = +$('calMes').value, a = +$('calAno').value; m++; if(m>12){ m=1; a++; } $('calMes').value = m; $('calAno').value = a; selectedDay = {}; updateCalendario(); };
+
+            const anosDisponiveis = [2023,2024,2025,2026];
+            $('calAno').innerHTML = anosDisponiveis.map(a => `<option value="${a}">${a}</option>`).join('');
+            $('calAno').value = new Date().getFullYear();
+            $('calMes').innerHTML = mesesNom.map((n,i) => `<option value="${i+1}">${n}</option>`).join('');
+            $('calMes').value = new Date().getMonth()+1;
+            $('calMes').onchange = () => { selectedDay = {}; updateCalendario(); };
+            $('calAno').onchange = () => { selectedDay = {}; updateCalendario(); };
 
             document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => {
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 $(btn.dataset.page).classList.add('active');
             });
+
             $('darkModeToggle').onclick = () => document.body.classList.toggle('dark');
+
             loadData();
         })();
     </script>
